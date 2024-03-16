@@ -6,11 +6,15 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"go.uber.org/zap"
 
+	"github.com/caarlos0/env/v6"
+
+	"github.com/PoorMercymain/filmoteka/internal/filmoteka/config"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/handlers"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/middleware"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/repository"
@@ -19,21 +23,23 @@ import (
 )
 
 func main() {
-	migrationsPath := "migrations"
-	dsn := "postgres://filmoteka:filmoteka@localhost:5432/filmoteka?sslmode=disable"
+	cfg := config.Config{}
+	if err := env.Parse(&cfg); err != nil {
+		logger.Logger().Fatalln("Failed to parse env: %v", err) // default logfile will be used
+	}
 
-	err := repository.ApplyMigrations(migrationsPath, dsn)
+	logger.SetLogFile(cfg.LogFilePath)
+
+	err := repository.ApplyMigrations(cfg.MigrationsPath, cfg.DSN())
 	if err != nil {
 		logger.Logger().Fatalln(zap.Error(err))
-		return
 	}
 
 	logger.Logger().Infoln("Migrations applied successfully")
 
-	pool, err := repository.GetPgxPool(dsn)
+	pool, err := repository.GetPgxPool(cfg.DSN())
 	if err != nil {
 		logger.Logger().Fatalln(zap.Error(err))
-		return
 	}
 
 	logger.Logger().Infoln("Postgres connection pool created")
@@ -47,13 +53,13 @@ func main() {
 	mux.Handle("GET /ping", middleware.Log(http.HandlerFunc(h.Ping)))
 
 	server := &http.Server{
-		Addr:     "localhost:8080",
+		Addr:     cfg.ServiceHost + ":" + strconv.Itoa(cfg.ServicePort),
 		ErrorLog: log.New(logger.Logger(), "", 0),
 		Handler:  mux,
 	}
 
 	go func() {
-		logger.Logger().Infoln("Server started, listening on port", 8080)
+		logger.Logger().Infoln("Server started, listening on port", cfg.ServicePort)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Logger().Fatalln("ListenAndServe failed", zap.Error(err))
 		}

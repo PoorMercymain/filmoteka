@@ -17,3 +17,17 @@ services:
       timeout: 7s
       retries: 5
     command: [ "postgres", "-c", "log_statement=all" ]
+  filmoteka:
+    build:
+      context: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MIGRATIONS: ${MIGRATIONS}
+      SERVICE_HOST: ${SERVICE_HOST}
+    volumes:
+      - ./${MIGRATIONS}:/filmoteka/${MIGRATIONS}
+      - ./${LOG_FILE_PATH}:/filmoteka/${LOG_FILE_PATH}
+    ports:
+      - "${SERVICE_PORT}:${SERVICE_PORT}"

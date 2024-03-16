@@ -9,7 +9,7 @@ import (
 
 type informativeResponseWriter struct {
 	http.ResponseWriter
-	statusCode int
+	statusCode    int
 	contentLength int64
 }
 
