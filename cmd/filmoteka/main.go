@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/handlers"
+	"github.com/PoorMercymain/filmoteka/internal/filmoteka/middleware"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/repository"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/service"
 	"github.com/PoorMercymain/filmoteka/pkg/logger"
@@ -43,7 +44,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /ping", h.Ping)
+	mux.Handle("GET /ping", middleware.Log(http.HandlerFunc(h.Ping)))
 
 	server := &http.Server{
 		Addr:     "localhost:8080",
