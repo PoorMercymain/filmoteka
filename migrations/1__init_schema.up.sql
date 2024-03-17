@@ -21,4 +21,23 @@ CREATE TABLE IF NOT EXISTS film_actor (
     FOREIGN KEY (actor_id) REFERENCES actors(id) ON DELETE CASCADE,
     FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE
 );
+
+CREATE OR REPLACE FUNCTION check_actor_birthday_before_film_release()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM actors
+        WHERE id = NEW.actor_id AND birthday > (
+            SELECT release_date FROM films WHERE id = NEW.film_id
+        )
+    ) THEN
+        RAISE EXCEPTION 'Играющие в фильме актеры не могут родиться позже даты выпуска фильма.' USING ERRCODE = 'P0001';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_actor_birthday_before_insert
+BEFORE INSERT ON film_actor
+FOR EACH ROW EXECUTE FUNCTION check_actor_birthday_before_film_release();
 COMMIT;

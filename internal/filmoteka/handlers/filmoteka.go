@@ -1,30 +1,198 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
+	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"go.uber.org/zap"
 
 	appErrors "github.com/PoorMercymain/filmoteka/errors"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/domain"
-	jsonduplicatechecker "github.com/PoorMercymain/filmoteka/pkg/json-duplicate-checker"
-	jsonmimechecker "github.com/PoorMercymain/filmoteka/pkg/json-mime-checker"
+	httperrorwriter "github.com/PoorMercymain/filmoteka/pkg/http-error-writer"
+	jsonhttpvalidator "github.com/PoorMercymain/filmoteka/pkg/json-http-validator"
 	"github.com/PoorMercymain/filmoteka/pkg/logger"
 )
 
-type filmoteka struct {
-	srv domain.FilmotekaService
+type actor struct {
+	srv domain.ActorService
 }
 
-func New(srv domain.FilmotekaService) *filmoteka {
-	return &filmoteka{srv: srv}
+func NewActor(srv domain.ActorService) *actor {
+	return &actor{srv: srv}
 }
 
-func (h *filmoteka) Ping(w http.ResponseWriter, r *http.Request) {
+func (h *actor) CreateActor(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	const logErrPrefix = "handlers.CreateActor():"
+
+	err := jsonhttpvalidator.ValidateJSONRequest(w, r, logErrPrefix)
+	if err != nil {
+		return
+	}
+
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+
+	var actor domain.Actor
+	if err = d.Decode(&actor); err != nil {
+		httperrorwriter.WriteError(w, err, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if actor.Name == "" {
+		httperrorwriter.WriteError(w, appErrors.ErrNoNameProvided, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	var gender bool
+	if actor.Gender == "male" {
+		gender = domain.Male
+	} else if actor.Gender == "female" {
+		gender = domain.Female
+	} else {
+		httperrorwriter.WriteError(w, appErrors.ErrUnknownGender, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	birthday, err := time.Parse(time.DateOnly, actor.Birthday)
+	if err != nil {
+		httperrorwriter.WriteError(w, err, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	id, err := h.srv.CreateActor(r.Context(), actor.Name, gender, birthday)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	e := json.NewEncoder(w)
+	err = e.Encode(domain.ID{ID: id})
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+	}
+}
+
+func (h *actor) UpdateActor(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	const logErrPrefix = "handlers.UpdateActor():"
+
+	idStr := r.PathValue("id")
+
+	if idStr == "" {
+		httperrorwriter.WriteError(w, appErrors.ErrNoIDProvided, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrIDIsNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	err = jsonhttpvalidator.ValidateJSONRequest(w, r, logErrPrefix)
+	if err != nil {
+		return
+	}
+
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+
+	var actor domain.Actor
+	if err = d.Decode(&actor); err != nil {
+		httperrorwriter.WriteError(w, err, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if actor.Name == "" && actor.Gender == "" && actor.Birthday == "" {
+		httperrorwriter.WriteError(w, appErrors.ErrNothingProvidedInJSON, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	var gender bool
+	var genderPtr *bool
+	if actor.Gender != "" {
+		if actor.Gender == "male" {
+			gender = domain.Male
+			genderPtr = &gender
+		} else if actor.Gender == "female" {
+			gender = domain.Female
+			genderPtr = &gender
+		} else {
+			httperrorwriter.WriteError(w, appErrors.ErrUnknownGender, http.StatusBadRequest, logErrPrefix)
+			return
+		}
+	}
+
+	var birthday time.Time
+	if actor.Birthday != "" {
+		birthday, err = time.Parse(time.DateOnly, actor.Birthday)
+		if err != nil {
+			httperrorwriter.WriteError(w, err, http.StatusBadRequest, logErrPrefix)
+			return
+		}
+	}
+
+	err = h.srv.UpdateActor(r.Context(), id, actor.Name, genderPtr, birthday)
+	if err != nil {
+		if errors.Is(err, appErrors.ErrNotFoundInDB) {
+			httperrorwriter.WriteError(w, appErrors.ErrNotFoundInDB, http.StatusNotFound, logErrPrefix)
+			return
+		}
+
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *actor) DeleteActor(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	const logErrPrefix = "handlers.DeleteActor():"
+
+	idStr := r.PathValue("id")
+
+	if idStr == "" {
+		httperrorwriter.WriteError(w, appErrors.ErrNoIDProvided, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrIDIsNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	err = h.srv.DeleteActor(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, appErrors.ErrNotFoundInDB) {
+			httperrorwriter.WriteError(w, appErrors.ErrNotFoundInDB, http.StatusNotFound, logErrPrefix)
+			return
+		}
+
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+type film struct {
+	srv domain.FilmService
+}
+
+func NewFilm(srv domain.FilmService) *film {
+	return &film{srv: srv}
+}
+
+func (h *film) Ping(w http.ResponseWriter, r *http.Request) {
 	err := h.srv.Ping(r.Context())
 	if err != nil {
 		logger.Logger().Errorln(zap.Error(err))
@@ -35,100 +203,89 @@ func (h *filmoteka) Ping(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *filmoteka) CreateActor(w http.ResponseWriter, r *http.Request) {
+func (h *film) CreateFilm(w http.ResponseWriter, r *http.Request) {
+	const (
+		titleLimit       = 150
+		descriptionLimit = 1000
+		minRating        = 0
+		maxRating        = 10
+	)
+
 	defer r.Body.Close()
+	const logErrPrefix = "handlers.CreateFilm():"
 
-	if !jsonmimechecker.IsJSONContentTypeCorrect(r) {
-		logger.Logger().Errorln("handlers.CreateActor():", zap.Error(appErrors.ErrWrongMIME))
-		w.WriteHeader(http.StatusBadRequest)
-		_, err := w.Write([]byte(appErrors.ErrWrongMIME.Error()))
-		if err != nil {
-			logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
-		}
-		return
-	}
-
-	bytesToCheck, err := io.ReadAll(r.Body)
+	err := jsonhttpvalidator.ValidateJSONRequest(w, r, logErrPrefix)
 	if err != nil {
-		logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-		_, err = w.Write([]byte(err.Error()))
-		if err != nil {
-			logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
-		}
 		return
 	}
-
-	reader := bytes.NewReader(bytes.Clone(bytesToCheck))
-
-	err = jsonduplicatechecker.CheckDuplicatesInJSON(json.NewDecoder(reader), nil)
-	if err != nil {
-		logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-		_, err = w.Write([]byte(err.Error()))
-		if err != nil {
-			logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
-		}
-		return
-	}
-
-	r.Body = io.NopCloser(bytes.NewBuffer(bytesToCheck))
 
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
 
-	var actor domain.Actor
-	if err := d.Decode(&actor); err != nil {
-		logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-		_, err = w.Write([]byte(err.Error()))
-		if err != nil {
-			logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
-		}
+	var film domain.Film
+	film.Rating = -1
+	if err = d.Decode(&film); err != nil {
+		httperrorwriter.WriteError(w, err, http.StatusBadRequest, logErrPrefix)
 		return
 	}
 
-	var gender bool
-	if actor.Gender == "male" {
-		gender = domain.Male
-	} else if actor.Gender == "female" {
-		gender = domain.Female
-	} else {
-		logger.Logger().Errorln("handlers.CreateActor():", zap.Error(appErrors.ErrUnknownGender))
-		w.WriteHeader(http.StatusBadRequest)
-		_, err = w.Write([]byte(appErrors.ErrUnknownGender.Error()))
-		if err != nil {
-			logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
-		}
+	if film.Title == "" {
+		httperrorwriter.WriteError(w, appErrors.ErrNoTitleProvided, http.StatusBadRequest, logErrPrefix)
 		return
 	}
 
-	birthday, err := time.Parse(time.DateOnly, actor.Birthday)
+	if len([]rune(film.Title)) > titleLimit {
+		httperrorwriter.WriteError(w, appErrors.ErrTitleTooLong, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if film.Description == "" {
+		httperrorwriter.WriteError(w, appErrors.ErrNoDescriptionProvided, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if len([]rune(film.Description)) > descriptionLimit {
+		httperrorwriter.WriteError(w, appErrors.ErrTitleTooLong, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	releaseDate, err := time.Parse(time.DateOnly, film.ReleaseDate)
 	if err != nil {
-		logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-		_, err = w.Write([]byte(err.Error()))
-		if err != nil {
-			logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
-		}
+		httperrorwriter.WriteError(w, err, http.StatusBadRequest, logErrPrefix)
 		return
 	}
 
-	id, err := h.srv.CreateActor(r.Context(), actor.Name, gender, birthday)
+	if film.Rating < minRating || film.Rating > maxRating {
+		httperrorwriter.WriteError(w, appErrors.ErrWrongRatingValue, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if film.Actors == nil {
+		film.Actors = make([]int, 0)
+	}
+
+	id, err := h.srv.CreateFilm(r.Context(), film.Title, film.Description, releaseDate, film.Rating, film.Actors)
 	if err != nil {
-		logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
-		_, err = w.Write([]byte(err.Error()))
-		if err != nil {
-			logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
+		if errors.Is(err, appErrors.ErrActorNotBornBeforeFilmRelease) {
+			httperrorwriter.WriteError(w, appErrors.ErrActorNotBornBeforeFilmRelease, http.StatusBadRequest, logErrPrefix)
+			return
 		}
+
+		if errors.Is(err, appErrors.ErrActorDoesNotExist) {
+			httperrorwriter.WriteError(w, appErrors.ErrActorDoesNotExist, http.StatusNotFound, logErrPrefix)
+			return
+		}
+
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
 		return
 	}
 
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+
 	e := json.NewEncoder(w)
 	err = e.Encode(domain.ID{ID: id})
 	if err != nil {
-		logger.Logger().Errorln("handlers.CreateActor():", zap.Error(err))
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 	}
 }

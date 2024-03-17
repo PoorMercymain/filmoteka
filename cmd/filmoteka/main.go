@@ -44,14 +44,20 @@ func main() {
 
 	logger.Logger().Infoln("Postgres connection pool created")
 
-	r := repository.New(repository.NewPostgres(pool))
-	s := service.New(r)
-	h := handlers.New(s)
+	ar := repository.NewActor(repository.NewPostgres(pool))
+	fr := repository.NewFilm(repository.NewPostgres(pool))
+	as := service.NewActor(ar)
+	fs := service.NewFilm(fr)
+	ah := handlers.NewActor(as)
+	fh := handlers.NewFilm(fs)
 
 	mux := http.NewServeMux()
 
-	mux.Handle("GET /ping", middleware.Log(http.HandlerFunc(h.Ping)))
-	mux.Handle("POST /actor", middleware.Log(http.HandlerFunc(h.CreateActor)))
+	mux.Handle("GET /ping", middleware.Log(http.HandlerFunc(fh.Ping)))
+	mux.Handle("POST /actor", middleware.Log(http.HandlerFunc(ah.CreateActor)))
+	mux.Handle("PUT /actor/{id}", middleware.Log(http.HandlerFunc(ah.UpdateActor)))
+	mux.Handle("DELETE /actor/{id}", middleware.Log(http.HandlerFunc(ah.DeleteActor)))
+	mux.Handle("POST /film", middleware.Log(http.HandlerFunc(fh.CreateFilm)))
 
 	server := &http.Server{
 		Addr:     cfg.ServiceHost + ":" + strconv.Itoa(cfg.ServicePort),

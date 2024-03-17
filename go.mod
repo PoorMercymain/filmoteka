@@ -5,6 +5,7 @@ go 1.22.1
 require (
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/golang-migrate/migrate/v4 v4.17.0
+	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/stretchr/testify v1.8.3
 	go.uber.org/zap v1.27.0
