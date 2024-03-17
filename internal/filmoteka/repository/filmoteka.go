@@ -3,6 +3,9 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type filmoteka struct {
@@ -20,4 +23,17 @@ func (r *filmoteka) Ping(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (r *filmoteka) CreateActor(ctx context.Context, name string, gender bool, birthday time.Time) (int, error) {
+	var id int
+	err := r.db.WithTransaction(ctx, func(ctx context.Context, tx pgx.Tx) error {
+		return tx.QueryRow(ctx, "INSERT INTO actors(name, gender, birthday) VALUES($1, $2, $3) RETURNING id", name, gender, birthday).Scan(&id)
+	})
+
+	if err != nil {
+		return 0, fmt.Errorf("repository.CreateActor(): %w", err)
+	}
+
+	return id, nil
 }

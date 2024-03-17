@@ -2,7 +2,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS actors  (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    gender TEXT,
+    gender BOOLEAN,
     birthday TIMESTAMPTZ
 );
 

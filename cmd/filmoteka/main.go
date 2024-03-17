@@ -51,6 +51,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /ping", middleware.Log(http.HandlerFunc(h.Ping)))
+	mux.Handle("POST /actor", middleware.Log(http.HandlerFunc(h.CreateActor)))
 
 	server := &http.Server{
 		Addr:     cfg.ServiceHost + ":" + strconv.Itoa(cfg.ServicePort),
