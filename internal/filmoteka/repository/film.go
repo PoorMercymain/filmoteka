@@ -74,3 +74,100 @@ func (r *film) CreateFilm(ctx context.Context, title string, description string,
 
 	return id, nil
 }
+
+func (r *film) UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *int, actors []int) error {
+	var (
+		titleInDB       string
+		descriptionInDB string
+		releaseDateInDB time.Time
+		ratingInDB      int
+		actorsInDB      []int
+	)
+
+	err := r.db.WithTransaction(ctx, func(ctx context.Context, tx pgx.Tx) error {
+		err := tx.QueryRow(ctx, "SELECT title, description, release_date, rating FROM films WHERE id = $1", id).Scan(&titleInDB, &descriptionInDB, &releaseDateInDB, &ratingInDB)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return appErrors.ErrNotFoundInDB
+			}
+
+			return err
+		}
+
+		if actors == nil {
+			rows, err := tx.Query(ctx, "SELECT actor_id FROM film_actor WHERE film_id = $1", id)
+			if err != nil {
+				return err
+			}
+
+			var actorID int
+			for rows.Next() {
+				err = rows.Scan(&actorID)
+				if err != nil {
+					return err
+				}
+
+				actorsInDB = append(actorsInDB, actorID)
+			}
+
+			actors = actorsInDB
+		}
+
+		if title == "" {
+			title = titleInDB
+		}
+
+		if description == "" {
+			description = descriptionInDB
+		}
+
+		var defaultTime time.Time
+		if releaseDate == defaultTime {
+			releaseDate = releaseDateInDB
+		}
+
+		if rating == nil {
+			rating = &ratingInDB
+		}
+
+		tag, err := tx.Exec(ctx, "UPDATE films SET title = $1, description = $2, release_date = $3, rating = $4 WHERE id = $5", title, description, releaseDate, *rating, id)
+		if err != nil {
+			return err
+		}
+
+		if tag.RowsAffected() == 0 {
+			return appErrors.ErrNotFoundInDB
+		}
+
+		_, err = tx.Exec(ctx, "DELETE FROM film_actor WHERE film_id = $1", id)
+		if err != nil {
+			return err
+		}
+
+		for _, actorID := range actors {
+			_, err = tx.Exec(ctx, "INSERT INTO film_actor(actor_id, film_id) VALUES($1, $2)", actorID, id)
+			if err != nil {
+				var pgErr *pgconn.PgError
+				if errors.As(err, &pgErr) {
+					if pgErr.Code == "P0001" {
+						return appErrors.ErrActorNotBornBeforeFilmRelease
+					}
+
+					if pgErr.Code == pgerrcode.ForeignKeyViolation {
+						return appErrors.ErrActorDoesNotExist
+					}
+				}
+
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("repository.UpdateFilm(): %w", err)
+	}
+
+	return nil
+}

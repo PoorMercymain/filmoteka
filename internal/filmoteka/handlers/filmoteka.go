@@ -223,7 +223,6 @@ func (h *film) CreateFilm(w http.ResponseWriter, r *http.Request) {
 	d.DisallowUnknownFields()
 
 	var film domain.Film
-	film.Rating = -1
 	if err = d.Decode(&film); err != nil {
 		httperrorwriter.WriteError(w, err, http.StatusBadRequest, logErrPrefix)
 		return
@@ -255,7 +254,12 @@ func (h *film) CreateFilm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if film.Rating < minRating || film.Rating > maxRating {
+	if film.Rating == nil {
+		httperrorwriter.WriteError(w, appErrors.ErrNoRatingValue, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if *film.Rating < minRating || *film.Rating > maxRating {
 		httperrorwriter.WriteError(w, appErrors.ErrWrongRatingValue, http.StatusBadRequest, logErrPrefix)
 		return
 	}
@@ -264,7 +268,7 @@ func (h *film) CreateFilm(w http.ResponseWriter, r *http.Request) {
 		film.Actors = make([]int, 0)
 	}
 
-	id, err := h.srv.CreateFilm(r.Context(), film.Title, film.Description, releaseDate, film.Rating, film.Actors)
+	id, err := h.srv.CreateFilm(r.Context(), film.Title, film.Description, releaseDate, *film.Rating, film.Actors)
 	if err != nil {
 		if errors.Is(err, appErrors.ErrActorNotBornBeforeFilmRelease) {
 			httperrorwriter.WriteError(w, appErrors.ErrActorNotBornBeforeFilmRelease, http.StatusBadRequest, logErrPrefix)
@@ -288,4 +292,97 @@ func (h *film) CreateFilm(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 	}
+}
+
+func (h *film) UpdateFilm(w http.ResponseWriter, r *http.Request) {
+	const (
+		titleLimit       = 150
+		descriptionLimit = 1000
+		minRating        = 0
+		maxRating        = 10
+	)
+
+	defer r.Body.Close()
+	const logErrPrefix = "handlers.UpdateFilm():"
+
+	idStr := r.PathValue("id")
+
+	if idStr == "" {
+		httperrorwriter.WriteError(w, appErrors.ErrNoIDProvided, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrIDIsNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	err = jsonhttpvalidator.ValidateJSONRequest(w, r, logErrPrefix)
+	if err != nil {
+		return
+	}
+
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+
+	var film domain.Film
+	if err = d.Decode(&film); err != nil {
+		httperrorwriter.WriteError(w, err, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if film.Actors == nil && film.Description == "" && film.Rating == nil && film.ReleaseDate == "" && film.Title == "" {
+		httperrorwriter.WriteError(w, appErrors.ErrNothingProvidedInJSON, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if len([]rune(film.Title)) > titleLimit {
+		httperrorwriter.WriteError(w, appErrors.ErrTitleTooLong, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if len([]rune(film.Description)) > descriptionLimit {
+		httperrorwriter.WriteError(w, appErrors.ErrTitleTooLong, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	var releaseDate time.Time
+	if film.ReleaseDate != "" {
+		releaseDate, err = time.Parse(time.DateOnly, film.ReleaseDate)
+		if err != nil {
+			httperrorwriter.WriteError(w, err, http.StatusBadRequest, logErrPrefix)
+			return
+		}
+	}
+
+	if film.Rating != nil {
+		if *film.Rating < minRating || *film.Rating > maxRating {
+			httperrorwriter.WriteError(w, appErrors.ErrWrongRatingValue, http.StatusBadRequest, logErrPrefix)
+			return
+		}
+	}
+
+	err = h.srv.UpdateFilm(r.Context(), id, film.Title, film.Description, releaseDate, film.Rating, film.Actors)
+	if err != nil {
+		if errors.Is(err, appErrors.ErrActorNotBornBeforeFilmRelease) {
+			httperrorwriter.WriteError(w, appErrors.ErrActorNotBornBeforeFilmRelease, http.StatusBadRequest, logErrPrefix)
+			return
+		}
+
+		if errors.Is(err, appErrors.ErrActorDoesNotExist) {
+			httperrorwriter.WriteError(w, appErrors.ErrActorDoesNotExist, http.StatusNotFound, logErrPrefix)
+			return
+		}
+
+		if errors.Is(err, appErrors.ErrNotFoundInDB) {
+			httperrorwriter.WriteError(w, appErrors.ErrNotFoundInDB, http.StatusNotFound, logErrPrefix)
+			return
+		}
+
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

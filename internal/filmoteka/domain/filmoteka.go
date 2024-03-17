@@ -8,11 +8,13 @@ import (
 type FilmService interface {
 	Ping(context.Context) error
 	CreateFilm(ctx context.Context, title string, description string, releaseDate time.Time, rating int, actors []int) (int, error)
+	UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *int, actors []int) error
 }
 
 type FilmRepository interface {
 	Ping(context.Context) error
 	CreateFilm(ctx context.Context, title string, description string, releaseDate time.Time, rating int, actors []int) (int, error)
+	UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *int, actors []int) error
 }
 
 type ActorService interface {

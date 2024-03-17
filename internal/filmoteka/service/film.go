@@ -37,3 +37,12 @@ func (s *film) CreateFilm(ctx context.Context, title string, description string,
 
 	return id, nil
 }
+
+func (s *film) UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *int, actors []int) error {
+	err := s.repo.UpdateFilm(ctx, id, title, description, releaseDate, rating, actors)
+	if err != nil {
+		return fmt.Errorf("service.UpdateFilm(): %w", err)
+	}
+
+	return nil
+}

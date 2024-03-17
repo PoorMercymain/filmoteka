@@ -12,4 +12,5 @@ var (
 	ErrNoDescriptionProvided = errors.New("description not found in request or is empty")
 	ErrDescriptionTooLong    = errors.New("description is too long (1000 characters is the limit)")
 	ErrWrongRatingValue      = errors.New("rating should be in range [0, 10]")
+	ErrNoRatingValue         = errors.New("rating value is not provided")
 )
