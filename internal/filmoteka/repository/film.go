@@ -171,3 +171,24 @@ func (r *film) UpdateFilm(ctx context.Context, id int, title string, description
 
 	return nil
 }
+
+func (r *film) DeleteFilm(ctx context.Context, id int) error {
+	err := r.db.WithTransaction(ctx, func(ctx context.Context, tx pgx.Tx) error {
+		tag, err := tx.Exec(ctx, "DELETE FROM films WHERE id = $1", id)
+		if err != nil {
+			return err
+		}
+
+		if tag.RowsAffected() == 0 {
+			return appErrors.ErrNotFoundInDB
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("repository.DeleteFilm(): %w", err)
+	}
+
+	return nil
+}

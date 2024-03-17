@@ -386,3 +386,34 @@ func (h *film) UpdateFilm(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *film) DeleteFilm(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	const logErrPrefix = "handlers.DeleteFilm():"
+
+	idStr := r.PathValue("id")
+
+	if idStr == "" {
+		httperrorwriter.WriteError(w, appErrors.ErrNoIDProvided, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrIDIsNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	err = h.srv.DeleteFilm(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, appErrors.ErrNotFoundInDB) {
+			httperrorwriter.WriteError(w, appErrors.ErrNotFoundInDB, http.StatusNotFound, logErrPrefix)
+			return
+		}
+
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

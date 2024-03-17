@@ -46,3 +46,12 @@ func (s *film) UpdateFilm(ctx context.Context, id int, title string, description
 
 	return nil
 }
+
+func (s *film) DeleteFilm(ctx context.Context, id int) error {
+	err := s.repo.DeleteFilm(ctx, id)
+	if err != nil {
+		return fmt.Errorf("service.DeleteFilm(): %w", err)
+	}
+
+	return nil
+}
