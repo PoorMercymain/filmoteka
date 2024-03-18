@@ -20,7 +20,27 @@ import (
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/repository"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/service"
 	"github.com/PoorMercymain/filmoteka/pkg/logger"
+	"github.com/swaggo/http-swagger"
+	_ "github.com/PoorMercymain/filmoteka/docs"
 )
+
+// @title Filmoteka API
+// @version 1.1
+// @description API для управления базой данных фильмов
+
+// @host localhost:8080
+// @BasePath /
+
+// @Tag.name Actors
+// @Tag.description Группа запросов для управления списком актеров
+
+// @Tag.name Films
+// @Tag.description Группа запросов для управления списком фильмов
+
+// @Tag.name Auth
+// @Tag.description Группа запросов для авторизации
+
+// @Schemes http
 
 func main() {
 	cfg := config.Config{}
@@ -67,6 +87,7 @@ func main() {
 	mux.Handle("GET /actors", middleware.Log(middleware.AuthorizationRequired(http.HandlerFunc(ah.ReadActors), auh.JWTKey)))
 	mux.Handle("POST /register", middleware.Log(http.HandlerFunc(auh.Register)))
 	mux.Handle("POST /login", middleware.Log(http.HandlerFunc(auh.LogIn)))
+	mux.Handle("/swagger/*", httpSwagger.WrapHandler)
 
 	server := &http.Server{
 		Addr:     cfg.ServiceHost + ":" + strconv.Itoa(cfg.ServicePort),

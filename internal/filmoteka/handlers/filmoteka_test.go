@@ -950,7 +950,7 @@ func TestRegister(t *testing.T) {
 			"/register",
 			http.MethodPost,
 			"application/json",
-			http.StatusOK,
+			http.StatusCreated,
 			"{\"login\":\"abc\",\"password\":\"abc\"}",
 		},
 	}
