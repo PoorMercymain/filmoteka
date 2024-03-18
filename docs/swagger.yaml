@@ -164,8 +164,8 @@ paths:
           description: No Content
         "400":
           description: Bad Request
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
       summary: Запрос получения списка актеров из БД
@@ -304,8 +304,8 @@ paths:
           description: No Content
         "400":
           description: Bad Request
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
       summary: Запрос получения списка фильмов из БД
@@ -347,8 +347,8 @@ paths:
           description: No Content
         "400":
           description: Bad Request
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
       summary: Запрос поиска фильмов в БД
@@ -373,8 +373,8 @@ paths:
           description: OK
         "400":
           description: Bad Request
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
         "500":
           description: Internal Server Error
       summary: Запрос получения токена для авторизации
