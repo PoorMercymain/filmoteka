@@ -213,31 +213,41 @@ func (r *film) ReadFilms(ctx context.Context, field string, order string, page i
 
 			curFilm.ReleaseDate = curReleaseDate.Format(time.DateOnly)
 
-			conn, err := r.db.Acquire(ctx)
+			actorRows, err := r.db.Query(ctx, "SELECT actor_id FROM film_actor WHERE film_id = $1 ORDER BY actor_id ASC", curFilm.ID)
 			if err != nil {
 				return err
 			}
 
-			actorRows, err := conn.Query(ctx, "SELECT actor_id FROM film_actor WHERE film_id = $1 ORDER BY actor_id ASC", curFilm.ID)
-			if err != nil {
-				conn.Release()
-				return err
-			}
+			var (
+				curActor    domain.FilmOutputActor
+				curGender   bool
+				curBirthday time.Time
+			)
 
-			var actorID int
-			curFilm.ActorIDs = nil
+			curFilm.Actors = make([]domain.FilmOutputActor, 0)
 			for actorRows.Next() {
-				err = actorRows.Scan(&actorID)
+				err = actorRows.Scan(&curActor.ID)
 				if err != nil {
-					conn.Release()
 					return err
 				}
 
-				curFilm.ActorIDs = append(curFilm.ActorIDs, actorID)
+				err = r.db.QueryRow(ctx, "SELECT name, gender, birthday FROM actors WHERE id = $1", curActor.ID).Scan(&curActor.Name, &curGender, &curBirthday)
+				if err != nil {
+					return err
+				}
+
+				if curGender {
+					curActor.Gender = "female"
+				} else {
+					curActor.Gender = "male"
+				}
+
+				curActor.Birthday = curBirthday.Format(time.DateOnly)
+
+				curFilm.Actors = append(curFilm.Actors, curActor)
 			}
 
 			films = append(films, curFilm)
-			conn.Release()
 		}
 
 		return nil
@@ -286,31 +296,41 @@ func (r *film) FindFilms(ctx context.Context, filmTitleFragment string, actorNam
 
 			curFilm.ReleaseDate = curReleaseDate.Format(time.DateOnly)
 
-			conn, err := r.db.Acquire(ctx)
+			actorRows, err := r.db.Query(ctx, "SELECT actor_id FROM film_actor WHERE film_id = $1 ORDER BY actor_id ASC", curFilm.ID)
 			if err != nil {
 				return err
 			}
 
-			actorRows, err := conn.Query(ctx, "SELECT actor_id FROM film_actor WHERE film_id = $1 ORDER BY actor_id ASC", curFilm.ID)
-			if err != nil {
-				conn.Release()
-				return err
-			}
+			var (
+				curActor    domain.FilmOutputActor
+				curGender   bool
+				curBirthday time.Time
+			)
 
-			var actorID int
-			curFilm.ActorIDs = nil
+			curFilm.Actors = make([]domain.FilmOutputActor, 0)
 			for actorRows.Next() {
-				err = actorRows.Scan(&actorID)
+				err = actorRows.Scan(&curActor.ID)
 				if err != nil {
-					conn.Release()
 					return err
 				}
 
-				curFilm.ActorIDs = append(curFilm.ActorIDs, actorID)
+				err = r.db.QueryRow(ctx, "SELECT name, gender, birthday FROM actors WHERE id = $1", curActor.ID).Scan(&curActor.Name, &curGender, &curBirthday)
+				if err != nil {
+					return err
+				}
+
+				if curGender {
+					curActor.Gender = "female"
+				} else {
+					curActor.Gender = "male"
+				}
+
+				curActor.Birthday = curBirthday.Format(time.DateOnly)
+
+				curFilm.Actors = append(curFilm.Actors, curActor)
 			}
 
 			films = append(films, curFilm)
-			conn.Release()
 		}
 
 		return nil
