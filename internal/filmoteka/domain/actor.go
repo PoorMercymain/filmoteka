@@ -6,9 +6,9 @@ const (
 )
 
 type Actor struct {
-	Name     string `json:"name,omitempty"`
-	Gender   string `json:"gender,omitempty"`
-	Birthday string `json:"birthday,omitempty"`
+	Name     string `json:"name,omitempty" example:"Vasily Abcd"`
+	Gender   string `json:"gender,omitempty" example:"male"`
+	Birthday string `json:"birthday,omitempty" example:"2001-10-25"`
 }
 
 type OutputActor struct {

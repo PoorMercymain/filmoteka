@@ -25,6 +25,18 @@ func NewActor(srv domain.ActorService) *actor {
 	return &actor{srv: srv}
 }
 
+// @Tags Actors
+// @Summary Запрос добавления актера в БД
+// @Description Запрос для добавления информации об актере в БД
+// @Accept json
+// @Produce json
+// @Param input body domain.Actor true "информация об актере"
+// @Success 201
+// @Failure 400
+// @Failure 401
+// @Failure 403
+// @Failure 500
+// @Router /actor [post]
 func (h *actor) CreateActor(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	const logErrPrefix = "handlers.CreateActor():"
@@ -81,6 +93,19 @@ func (h *actor) CreateActor(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Tags Actors
+// @Summary Запрос обновления актера в БД
+// @Description Запрос для обновления информации об актере в БД, как полностью, так и частичного
+// @Accept json
+// @Param input body domain.Actor true "информация об актере"
+// @Param id path int true "id актера" Example(1)
+// @Success 204
+// @Failure 400
+// @Failure 401
+// @Failure 403
+// @Failure 404
+// @Failure 500
+// @Router /actor/{id} [put]
 func (h *actor) UpdateActor(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	const logErrPrefix = "handlers.UpdateActor():"
@@ -156,6 +181,18 @@ func (h *actor) UpdateActor(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// @Tags Actors
+// @Summary Запрос удаления актера из БД
+// @Description Запрос для удаления информации об актере из БД
+// @Accept json
+// @Param id path int true "id актера" Example(1)
+// @Success 204
+// @Failure 400
+// @Failure 401
+// @Failure 403
+// @Failure 404
+// @Failure 500
+// @Router /actor/{id} [delete]
 func (h *actor) DeleteActor(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	const logErrPrefix = "handlers.DeleteActor():"
@@ -188,6 +225,18 @@ func (h *actor) DeleteActor(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// @Tags Actors
+// @Summary Запрос получения списка актеров из БД
+// @Description Запрос для получения списка актеров из БД, для каждого актера также выводится список фильмов с его участием, предусмотрена пагинация
+// @Produce json
+// @Param page query int false "номер страницы, начинается с 1 (по умолчанию 1)" Example(1)
+// @Param limit query int false "максимальное число актеров на странице, в диапазоне [1, 100] (по умолчанию 15)" Example(1)
+// @Success 200
+// @Success 204
+// @Failure 400
+// @Failure 403
+// @Failure 500
+// @Router /actors [get]
 func (h *actor) ReadActors(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	const logErrPrefix = "handlers.ReadActors():"
@@ -254,6 +303,19 @@ func NewFilm(srv domain.FilmService) *film {
 	return &film{srv: srv}
 }
 
+// @Tags Films
+// @Summary Запрос добавления информации о фильме в БД
+// @Description Запрос для добавления информации о фильме в БД
+// @Accept json
+// @Produce json
+// @Param input body domain.Film true "информация о фильме"
+// @Success 201
+// @Failure 400
+// @Failure 401
+// @Failure 403
+// @Failure 404
+// @Failure 500
+// @Router /film [post]
 func (h *film) CreateFilm(w http.ResponseWriter, r *http.Request) {
 	const (
 		titleLimit       = 150
@@ -346,6 +408,19 @@ func (h *film) CreateFilm(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Tags Films
+// @Summary Запрос обновления информации о фильме
+// @Description Запрос для обновления информации о фильме, как полного, так и частичного
+// @Accept json
+// @Param input body domain.Film true "информация о фильме"
+// @Param id path int true "id фильма" Example(1)
+// @Success 204
+// @Failure 400
+// @Failure 401
+// @Failure 403
+// @Failure 404
+// @Failure 500
+// @Router /film/{id} [put]
 func (h *film) UpdateFilm(w http.ResponseWriter, r *http.Request) {
 	const (
 		titleLimit       = 150
@@ -440,6 +515,18 @@ func (h *film) UpdateFilm(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// @Tags Films
+// @Summary Запрос удаления фильма из БД
+// @Description Запрос для удаления информации о фильме из БД
+// @Param input body domain.Film true "информация о фильме"
+// @Param id path int true "id фильма" Example(1)
+// @Success 204
+// @Failure 400
+// @Failure 401
+// @Failure 403
+// @Failure 404
+// @Failure 500
+// @Router /film/{id} [delete]
 func (h *film) DeleteFilm(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	const logErrPrefix = "handlers.DeleteFilm():"
@@ -472,6 +559,20 @@ func (h *film) DeleteFilm(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// @Tags Films
+// @Summary Запрос получения списка фильмов из БД
+// @Description Запрос для получения списка фильмов из БД, для каждого фильма также выводится список фильмов с его участием, предусмотрена пагинация, по умолчанию сортируется по убыванию рейтинга
+// @Produce json
+// @Param field query string false "поле для сортировки (release_date, rating, title, по умолчанию - rating)" Example(title)
+// @Param order query string false "поле для порядка сортировки (desc - по убыванию, asc - по возрастанию, по умолчанию - desc)" Example(desc)
+// @Param page query int false "номер страницы, начинается с 1 (по умолчанию 1)" Example(1)
+// @Param limit query int false "максимальное число актеров на странице, в диапазоне [1, 100] (по умолчанию 15)" Example(1)
+// @Success 200
+// @Success 204
+// @Failure 400
+// @Failure 403
+// @Failure 500
+// @Router /films [get]
 func (h *film) ReadFilms(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	const logErrPrefix = "handlers.ReadFilms():"
@@ -551,6 +652,20 @@ func (h *film) ReadFilms(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Tags Films
+// @Summary Запрос поиска фильмов в БД
+// @Description Запрос для поиска фильмов в БД по фрагменту названия фильма и/или имени актера, по умолчанию выдает 1 самый подходящий фильм, для успешного запроса надо указать хотя бы один из фрагментов
+// @Produce json
+// @Param title query string false "фрагмент названия фильма для поиска" Example(film)
+// @Param order query string false "фрагмент имени актера для поиска" Example(Val)
+// @Param page query int false "номер страницы, начинается с 1 (по умолчанию 1)" Example(1)
+// @Param limit query int false "максимальное число актеров на странице, в диапазоне [1, 100] (по умолчанию 1)" Example(1)
+// @Success 200
+// @Success 204
+// @Failure 400
+// @Failure 403
+// @Failure 500
+// @Router /films/search [get]
 func (h *film) FindFilms(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	const logErrPrefix = "handlers.FindFilms():"
@@ -625,6 +740,17 @@ func NewAuthorization(srv domain.AuthorizationService, jwtKey string) *authoriza
 	return &authorization{srv: srv, JWTKey: jwtKey}
 }
 
+// @Tags Auth
+// @Summary Запрос регистрации в filmoteka
+// @Description Запрос для регистрации в сервисе, производится регистрация обычного пользователя (если нужен админ, надо задать соответствующее поле в БД в таблице auth) и выдается JWT (можно указать в заголовке Authorization) на 24 часа (также записывается в Cookie)
+// @Accept json
+// @Produce json
+// @Param input body domain.AuthorizationData true "аутентификационные данные"
+// @Success 201
+// @Failure 400
+// @Failure 409
+// @Failure 500
+// @Router /register [post]
 func (h *authorization) Register(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	const logErrPrefix = "handlers.Register():"
@@ -683,7 +809,7 @@ func (h *authorization) Register(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &cookie)
 
 	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 
 	e := json.NewEncoder(w)
 	err = e.Encode(domain.Token{Token: tokenStr})
@@ -692,6 +818,17 @@ func (h *authorization) Register(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Tags Auth
+// @Summary Запрос получения токена для авторизации
+// @Description Запрос для получения JWT в Cookie и теле ответа
+// @Accept json
+// @Produce json
+// @Param input body domain.AuthorizationData true "аутентификационные данные"
+// @Success 200
+// @Failure 400
+// @Failure 403
+// @Failure 500
+// @Router /login [post]
 func (h *authorization) LogIn(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	const logErrPrefix = "handlers.LogIn():"

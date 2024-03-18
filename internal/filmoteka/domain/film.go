@@ -1,11 +1,11 @@
 package domain
 
 type Film struct {
-	Title       string   `json:"title,omitempty"`
-	Description string   `json:"description,omitempty"`
-	ReleaseDate string   `json:"releaseDate,omitempty"`
-	Rating      *float32 `json:"rating,omitempty"`
-	Actors      []int    `json:"actorIDs"`
+	Title       string   `json:"title,omitempty" example:"film 2"`
+	Description string   `json:"description,omitempty" example:"some kind of film"`
+	ReleaseDate string   `json:"releaseDate,omitempty" example:"2007-09-20"`
+	Rating      *float32 `json:"rating,omitempty" example:"8.6"`
+	Actors      []int    `json:"actorIDs" example:"1,2,3"`
 }
 
 type OutputFilm struct {

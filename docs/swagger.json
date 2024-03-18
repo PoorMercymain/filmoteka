@@ -1,0 +1,612 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API для управления базой данных фильмов",
+        "title": "Filmoteka API",
+        "contact": {},
+        "version": "1.1"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/actor": {
+            "post": {
+                "description": "Запрос для добавления информации об актере в БД",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Actors"
+                ],
+                "summary": "Запрос добавления актера в БД",
+                "parameters": [
+                    {
+                        "description": "информация об актере",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.Actor"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/actor/{id}": {
+            "put": {
+                "description": "Запрос для обновления информации об актере в БД, как полностью, так и частичного",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Actors"
+                ],
+                "summary": "Запрос обновления актера в БД",
+                "parameters": [
+                    {
+                        "description": "информация об актере",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.Actor"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "id актера",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Запрос для удаления информации об актере из БД",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Actors"
+                ],
+                "summary": "Запрос удаления актера из БД",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "id актера",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/actors": {
+            "get": {
+                "description": "Запрос для получения списка актеров из БД, для каждого актера также выводится список фильмов с его участием, предусмотрена пагинация",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Actors"
+                ],
+                "summary": "Запрос получения списка актеров из БД",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "номер страницы, начинается с 1 (по умолчанию 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "максимальное число актеров на странице, в диапазоне [1, 100] (по умолчанию 15)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/film": {
+            "post": {
+                "description": "Запрос для добавления информации о фильме в БД",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Films"
+                ],
+                "summary": "Запрос добавления информации о фильме в БД",
+                "parameters": [
+                    {
+                        "description": "информация о фильме",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.Film"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/film/{id}": {
+            "put": {
+                "description": "Запрос для обновления информации о фильме, как полного, так и частичного",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Films"
+                ],
+                "summary": "Запрос обновления информации о фильме",
+                "parameters": [
+                    {
+                        "description": "информация о фильме",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.Film"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "id фильма",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Запрос для удаления информации о фильме из БД",
+                "tags": [
+                    "Films"
+                ],
+                "summary": "Запрос удаления фильма из БД",
+                "parameters": [
+                    {
+                        "description": "информация о фильме",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.Film"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "id фильма",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/films": {
+            "get": {
+                "description": "Запрос для получения списка фильмов из БД, для каждого фильма также выводится список фильмов с его участием, предусмотрена пагинация, по умолчанию сортируется по убыванию рейтинга",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Films"
+                ],
+                "summary": "Запрос получения списка фильмов из БД",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "title",
+                        "description": "поле для сортировки (release_date, rating, title, по умолчанию - rating)",
+                        "name": "field",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "desc",
+                        "description": "поле для порядка сортировки (desc - по убыванию, asc - по возрастанию, по умолчанию - desc)",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "номер страницы, начинается с 1 (по умолчанию 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "максимальное число актеров на странице, в диапазоне [1, 100] (по умолчанию 15)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/films/search": {
+            "get": {
+                "description": "Запрос для поиска фильмов в БД по фрагменту названия фильма и/или имени актера, по умолчанию выдает 1 самый подходящий фильм, для успешного запроса надо указать хотя бы один из фрагментов",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Films"
+                ],
+                "summary": "Запрос поиска фильмов в БД",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "film",
+                        "description": "фрагмент названия фильма для поиска",
+                        "name": "title",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Val",
+                        "description": "фрагмент имени актера для поиска",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "номер страницы, начинается с 1 (по умолчанию 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "максимальное число актеров на странице, в диапазоне [1, 100] (по умолчанию 1)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "description": "Запрос для получения JWT в Cookie и теле ответа",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Запрос получения токена для авторизации",
+                "parameters": [
+                    {
+                        "description": "аутентификационные данные",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.AuthorizationData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/register": {
+            "post": {
+                "description": "Запрос для регистрации в сервисе, производится регистрация обычного пользователя (если нужен админ, надо задать соответствующее поле в БД в таблице auth) и выдается JWT (можно указать в заголовке Authorization) на 24 часа (также записывается в Cookie)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Запрос регистрации в filmoteka",
+                "parameters": [
+                    {
+                        "description": "аутентификационные данные",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.AuthorizationData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "409": {
+                        "description": "Conflict"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "domain.Actor": {
+            "type": "object",
+            "properties": {
+                "birthday": {
+                    "type": "string",
+                    "example": "2001-10-25"
+                },
+                "gender": {
+                    "type": "string",
+                    "example": "male"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Vasily Abcd"
+                }
+            }
+        },
+        "domain.AuthorizationData": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.Film": {
+            "type": "object",
+            "properties": {
+                "actorIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1,
+                        2,
+                        3
+                    ]
+                },
+                "description": {
+                    "type": "string",
+                    "example": "some kind of film"
+                },
+                "rating": {
+                    "type": "number",
+                    "example": 8.6
+                },
+                "releaseDate": {
+                    "type": "string",
+                    "example": "2007-09-20"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "film 2"
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "description": "Группа запросов для управления списком актеров",
+            "name": "Actors"
+        },
+        {
+            "description": "Группа запросов для управления списком фильмов",
+            "name": "Films"
+        },
+        {
+            "description": "Группа запросов для авторизации",
+            "name": "Auth"
+        }
+    ]
+}
