@@ -44,7 +44,7 @@ func testRouter(t *testing.T) *http.ServeMux {
 	ar.EXPECT().CreateActor(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(0, nil).MaxTimes(1)
 	ar.EXPECT().UpdateActor(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appErrors.ErrNotFoundInDB).MaxTimes(1)
 	ar.EXPECT().UpdateActor(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("")).MaxTimes(1)
-	ar.EXPECT().UpdateActor(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).MaxTimes(1)
+	ar.EXPECT().UpdateActor(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).MaxTimes(3)
 	ar.EXPECT().DeleteActor(gomock.Any(), gomock.Any()).Return(appErrors.ErrNotFoundInDB).MaxTimes(1)
 	ar.EXPECT().DeleteActor(gomock.Any(), gomock.Any()).Return(errors.New("")).MaxTimes(1)
 	ar.EXPECT().DeleteActor(gomock.Any(), gomock.Any()).Return(nil).MaxTimes(1)
@@ -54,7 +54,7 @@ func testRouter(t *testing.T) *http.ServeMux {
 	fr.EXPECT().CreateFilm(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(0, appErrors.ErrActorNotBornBeforeFilmRelease).MaxTimes(1)
 	fr.EXPECT().CreateFilm(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(0, appErrors.ErrActorDoesNotExist).MaxTimes(1)
 	fr.EXPECT().CreateFilm(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(0, errors.New("")).MaxTimes(1)
-	fr.EXPECT().CreateFilm(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(0, nil).MaxTimes(1)
+	fr.EXPECT().CreateFilm(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(0, nil).MaxTimes(2)
 	fr.EXPECT().UpdateFilm(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appErrors.ErrActorNotBornBeforeFilmRelease).MaxTimes(1)
 	fr.EXPECT().UpdateFilm(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appErrors.ErrActorDoesNotExist).MaxTimes(1)
 	fr.EXPECT().UpdateFilm(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(appErrors.ErrNotFoundInDB).MaxTimes(1)
@@ -288,6 +288,20 @@ func TestUpdateActor(t *testing.T) {
 			"application/json",
 			http.StatusNoContent,
 			"{\"name\":\"abc\", \"gender\":\"\",\"birthday\":\"\"}",
+		},
+		{
+			"/actor/1",
+			http.MethodPut,
+			"application/json",
+			http.StatusNoContent,
+			"{\"name\":\"abc\", \"gender\":\"male\",\"birthday\":\"\"}",
+		},
+		{
+			"/actor/1",
+			http.MethodPut,
+			"application/json",
+			http.StatusNoContent,
+			"{\"name\":\"abc\", \"gender\":\"female\",\"birthday\":\"\"}",
 		},
 	}
 
@@ -552,6 +566,13 @@ func TestCreateFilm(t *testing.T) {
 			http.StatusCreated,
 			"{\"title\":\"abc\",\"description\": \"test\",\"releaseDate\": \"2019-04-13\",\"rating\": 5.7,\"actorIDs\": [3, 4]}",
 		},
+		{
+			"/film",
+			http.MethodPost,
+			"application/json",
+			http.StatusCreated,
+			"{\"title\":\"abc\",\"description\": \"test\",\"releaseDate\": \"2021-04-13\",\"rating\": 5.7}",
+		},
 	}
 
 	for _, testCase := range testTable {
@@ -655,6 +676,13 @@ func TestUpdateFilm(t *testing.T) {
 			"application/json",
 			http.StatusInternalServerError,
 			"{\"title\":\"a\",\"description\": \"test\",\"releaseDate\": \"2021-04-13\",\"rating\": 1,\"actorIDs\": [3, 4]}",
+		},
+		{
+			"/film/1",
+			http.MethodPut,
+			"application/json",
+			http.StatusBadRequest,
+			"{\"title\":\"a\",\"description\": \"test\",\"releaseDate\": \"2021-04-13\",\"rating\": 1,\"actors\": [3, 4]}",
 		},
 		{
 			"/film/1",
