@@ -39,12 +39,12 @@ type ActorRepository interface {
 
 type AuthorizationService interface {
 	Register(ctx context.Context, login string, password string) error
-	LogIn(ctx context.Context, login string, password string) error
 	CheckAuth(ctx context.Context, login string, password string) error
+	IsAdmin(ctx context.Context, login string) (bool, error)
 }
 
 type AuthorizationRepository interface {
-	Register(ctx context.Context, login string, password string) error
-	LogIn(ctx context.Context, login string, password string) error
-	CheckAuth(ctx context.Context, login string, password string) error
+	Register(ctx context.Context, login string, passwordHash string) error
+	GetPasswordHash(ctx context.Context, login string) (string, error)
+	IsAdmin(ctx context.Context, login string) (bool, error)
 }

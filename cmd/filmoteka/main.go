@@ -44,25 +44,30 @@ func main() {
 
 	logger.Logger().Infoln("Postgres connection pool created")
 
+	aur := repository.NewAuthorization(repository.NewPostgres(pool))
 	ar := repository.NewActor(repository.NewPostgres(pool))
 	fr := repository.NewFilm(repository.NewPostgres(pool))
+	aus := service.NewAuthorization(aur)
 	as := service.NewActor(ar)
 	fs := service.NewFilm(fr)
+	auh := handlers.NewAuthorization(aus, cfg.JWTKey)
 	ah := handlers.NewActor(as)
 	fh := handlers.NewFilm(fs)
 
 	mux := http.NewServeMux()
 
-	mux.Handle("GET /ping", middleware.Log(http.HandlerFunc(fh.Ping)))
-	mux.Handle("POST /actor", middleware.Log(http.HandlerFunc(ah.CreateActor)))
-	mux.Handle("PUT /actor/{id}", middleware.Log(http.HandlerFunc(ah.UpdateActor)))
-	mux.Handle("DELETE /actor/{id}", middleware.Log(http.HandlerFunc(ah.DeleteActor)))
-	mux.Handle("POST /film", middleware.Log(http.HandlerFunc(fh.CreateFilm)))
-	mux.Handle("PUT /film/{id}", middleware.Log(http.HandlerFunc(fh.UpdateFilm)))
-	mux.Handle("DELETE /film/{id}", middleware.Log(http.HandlerFunc(fh.DeleteFilm)))
-	mux.Handle("GET /films", middleware.Log(http.HandlerFunc(fh.ReadFilms)))
-	mux.Handle("GET /films/search", middleware.Log(http.HandlerFunc(fh.FindFilms)))
-	mux.Handle("GET /actors", middleware.Log(http.HandlerFunc(ah.ReadActors)))
+	mux.Handle("GET /ping", middleware.Log(middleware.AuthorizationRequired(http.HandlerFunc(fh.Ping), auh.JWTKey)))
+	mux.Handle("POST /actor", middleware.Log(middleware.AdminRequired(http.HandlerFunc(ah.CreateActor), auh.JWTKey)))
+	mux.Handle("PUT /actor/{id}", middleware.Log(middleware.AdminRequired(http.HandlerFunc(ah.UpdateActor), auh.JWTKey)))
+	mux.Handle("DELETE /actor/{id}", middleware.Log(middleware.AdminRequired(http.HandlerFunc(ah.DeleteActor), auh.JWTKey)))
+	mux.Handle("POST /film", middleware.Log(middleware.AdminRequired(http.HandlerFunc(fh.CreateFilm), auh.JWTKey)))
+	mux.Handle("PUT /film/{id}", middleware.Log(middleware.AdminRequired(http.HandlerFunc(fh.UpdateFilm), auh.JWTKey)))
+	mux.Handle("DELETE /film/{id}", middleware.Log(middleware.AdminRequired(http.HandlerFunc(fh.DeleteFilm), auh.JWTKey)))
+	mux.Handle("GET /films", middleware.Log(middleware.AuthorizationRequired(http.HandlerFunc(fh.ReadFilms), auh.JWTKey)))
+	mux.Handle("GET /films/search", middleware.Log(middleware.AuthorizationRequired(http.HandlerFunc(fh.FindFilms), auh.JWTKey)))
+	mux.Handle("GET /actors", middleware.Log(middleware.AuthorizationRequired(http.HandlerFunc(ah.ReadActors), auh.JWTKey)))
+	mux.Handle("POST /register", middleware.Log(http.HandlerFunc(auh.Register)))
+	mux.Handle("POST /login", middleware.Log(http.HandlerFunc(auh.LogIn)))
 
 	server := &http.Server{
 		Addr:     cfg.ServiceHost + ":" + strconv.Itoa(cfg.ServicePort),

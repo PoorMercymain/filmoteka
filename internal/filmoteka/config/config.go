@@ -11,6 +11,7 @@ type Config struct {
 	ServiceHost      string `env:"SERVICE_HOST" envDefault:"0.0.0.0"`
 	MigrationsPath   string `env:"MIGRATIONS_PATH" envDefault:"migrations"`
 	LogFilePath      string `env:"LOG_FILE_PATH" envDefault:"logfile.log"`
+	JWTKey           string `env:"JWT_KEY" envDefault:"notreallysecret"`
 }
 
 func (c *Config) DSN() string {

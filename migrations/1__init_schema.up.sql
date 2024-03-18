@@ -22,6 +22,12 @@ CREATE TABLE IF NOT EXISTS film_actor (
     FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS auth (
+    login TEXT PRIMARY KEY,
+    hash TEXT,
+    is_admin BOOLEAN
+);
+
 CREATE OR REPLACE FUNCTION check_actor_birthday_before_film_release()
 RETURNS TRIGGER AS $$
 BEGIN

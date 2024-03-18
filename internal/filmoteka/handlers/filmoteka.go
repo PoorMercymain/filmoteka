@@ -13,6 +13,7 @@ import (
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/domain"
 	httperrorwriter "github.com/PoorMercymain/filmoteka/pkg/http-error-writer"
 	jsonhttpvalidator "github.com/PoorMercymain/filmoteka/pkg/json-http-validator"
+	"github.com/PoorMercymain/filmoteka/pkg/jwt"
 	"github.com/PoorMercymain/filmoteka/pkg/logger"
 )
 
@@ -624,4 +625,135 @@ func (h *actor) ReadActors(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 	}
+}
+
+type authorization struct {
+	srv    domain.AuthorizationService
+	JWTKey string
+}
+
+func NewAuthorization(srv domain.AuthorizationService, jwtKey string) *authorization {
+	return &authorization{srv: srv, JWTKey: jwtKey}
+}
+
+func (h *authorization) Register(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	const logErrPrefix = "handlers.Register():"
+
+	err := jsonhttpvalidator.ValidateJSONRequest(w, r, logErrPrefix)
+	if err != nil {
+		return
+	}
+
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+
+	var authData domain.AuthorizationData
+	if err = d.Decode(&authData); err != nil {
+		httperrorwriter.WriteError(w, err, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	err = h.srv.Register(r.Context(), authData.Login, authData.Password)
+	if err != nil {
+		if errors.Is(err, appErrors.ErrAlreadyRegistered) {
+			httperrorwriter.WriteError(w, appErrors.ErrAlreadyRegistered, http.StatusConflict, logErrPrefix)
+			return
+		}
+
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	isAdmin, err := h.srv.IsAdmin(r.Context(), authData.Login)
+	if err != nil {
+		if errors.Is(err, appErrors.ErrUserNotFound) {
+			httperrorwriter.WriteError(w, appErrors.ErrUserNotFound, http.StatusInternalServerError, logErrPrefix)
+			return
+		}
+
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	tokenStr, err := jwt.CreateJWT(isAdmin, []byte(h.JWTKey))
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	cookie := http.Cookie{
+		Name:   "authToken",
+		Value:  tokenStr,
+		MaxAge: 86400,
+	}
+
+	http.SetCookie(w, &cookie)
+}
+
+func (h *authorization) LogIn(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	const logErrPrefix = "handlers.Register():"
+
+	err := jsonhttpvalidator.ValidateJSONRequest(w, r, logErrPrefix)
+	if err != nil {
+		return
+	}
+
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+
+	var authData domain.AuthorizationData
+	if err = d.Decode(&authData); err != nil {
+		httperrorwriter.WriteError(w, err, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	err = h.srv.CheckAuth(r.Context(), authData.Login, authData.Password)
+	if err != nil {
+		if errors.Is(err, appErrors.ErrUserNotFound) {
+			httperrorwriter.WriteError(w, appErrors.ErrUserNotFound, http.StatusUnauthorized, logErrPrefix)
+			return
+		}
+
+		if errors.Is(err, appErrors.ErrWrongPassword) {
+			httperrorwriter.WriteError(w, appErrors.ErrWrongPassword, http.StatusUnauthorized, logErrPrefix)
+			return
+		}
+
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	isAdmin, err := h.srv.IsAdmin(r.Context(), authData.Login)
+	if err != nil {
+		if errors.Is(err, appErrors.ErrUserNotFound) {
+			httperrorwriter.WriteError(w, appErrors.ErrUserNotFound, http.StatusInternalServerError, logErrPrefix)
+			return
+		}
+
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	logger.Logger().Infoln(isAdmin)
+	tokenStr, err := jwt.CreateJWT(isAdmin, []byte(h.JWTKey))
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	cookie := http.Cookie{
+		Name:   "authToken",
+		Value:  tokenStr,
+		MaxAge: 86400,
+	}
+
+	http.SetCookie(w, &cookie)
 }

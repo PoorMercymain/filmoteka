@@ -26,6 +26,7 @@ services:
     environment:
       MIGRATIONS: ${MIGRATIONS}
       SERVICE_HOST: ${SERVICE_HOST}
+      JWT_KEY: ${JWT_KEY}
     volumes:
       - ./${MIGRATIONS}:/filmoteka/${MIGRATIONS}
       - ./${LOG_FILE_PATH}:/filmoteka/${LOG_FILE_PATH}

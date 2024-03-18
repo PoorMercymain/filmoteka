@@ -105,7 +105,7 @@ func (r *actor) DeleteActor(ctx context.Context, id int) error {
 }
 
 func (r *actor) ReadActors(ctx context.Context, page int, limit int) ([]domain.OutputActor, error) {
-	var actors []domain.OutputActor
+	actors := make([]domain.OutputActor, 0)
 	err := r.db.WithConnection(ctx, func(ctx context.Context, c *pgxpool.Conn) error {
 		rows, err := c.Query(ctx, "SELECT id, name, gender, birthday FROM actors LIMIT $1 OFFSET $2", limit, (page-1)*limit)
 		if err != nil {
@@ -113,8 +113,8 @@ func (r *actor) ReadActors(ctx context.Context, page int, limit int) ([]domain.O
 		}
 
 		var (
-			curActor domain.OutputActor
-			curGender bool
+			curActor    domain.OutputActor
+			curGender   bool
 			curBirthday time.Time
 		)
 
@@ -138,13 +138,18 @@ func (r *actor) ReadActors(ctx context.Context, page int, limit int) ([]domain.O
 			}
 
 			var (
-				films []domain.ActorOutputFilm
-				curFilm domain.ActorOutputFilm
+				curFilm        domain.ActorOutputFilm
 				curReleaseDate time.Time
 			)
 
+			films := make([]domain.ActorOutputFilm, 0)
+
 			for filmRows.Next() {
-				filmRows.Scan(&curFilm.ID)
+				err = filmRows.Scan(&curFilm.ID)
+				if err != nil {
+					return err
+				}
+
 				err = r.db.QueryRow(ctx, "SELECT title, description, release_date, rating FROM films WHERE id = $1", curFilm.ID).Scan(&curFilm.Title, &curFilm.Description, &curReleaseDate, &curFilm.Rating)
 				if err != nil {
 					return err
