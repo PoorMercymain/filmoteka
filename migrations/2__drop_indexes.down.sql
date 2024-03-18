@@ -1,0 +1,4 @@
+BEGIN;
+DROP INDEX IF EXISTS actors_idx;
+DROP INDEX IF EXISTS films_idx;
+COMMIT;
