@@ -234,7 +234,7 @@ func (h *actor) DeleteActor(w http.ResponseWriter, r *http.Request) {
 // @Success 200
 // @Success 204
 // @Failure 400
-// @Failure 403
+// @Failure 401
 // @Failure 500
 // @Router /actors [get]
 func (h *actor) ReadActors(w http.ResponseWriter, r *http.Request) {
@@ -570,7 +570,7 @@ func (h *film) DeleteFilm(w http.ResponseWriter, r *http.Request) {
 // @Success 200
 // @Success 204
 // @Failure 400
-// @Failure 403
+// @Failure 401
 // @Failure 500
 // @Router /films [get]
 func (h *film) ReadFilms(w http.ResponseWriter, r *http.Request) {
@@ -663,7 +663,7 @@ func (h *film) ReadFilms(w http.ResponseWriter, r *http.Request) {
 // @Success 200
 // @Success 204
 // @Failure 400
-// @Failure 403
+// @Failure 401
 // @Failure 500
 // @Router /films/search [get]
 func (h *film) FindFilms(w http.ResponseWriter, r *http.Request) {
@@ -826,7 +826,7 @@ func (h *authorization) Register(w http.ResponseWriter, r *http.Request) {
 // @Param input body domain.AuthorizationData true "аутентификационные данные"
 // @Success 200
 // @Failure 400
-// @Failure 403
+// @Failure 401
 // @Failure 500
 // @Router /login [post]
 func (h *authorization) LogIn(w http.ResponseWriter, r *http.Request) {
