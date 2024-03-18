@@ -14,10 +14,10 @@ type Claims struct {
 	IsAdmin bool `json:"isAdmin"`
 }
 
-func CreateJWT(isAdmin bool, signingKey []byte) (string, error) {
+func CreateJWT(isAdmin bool, signingKey []byte, expiresAt time.Time) (string, error) {
 	claims := &Claims{
 		RegisteredClaims: &jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
 		},
 		IsAdmin: isAdmin,
 	}
@@ -38,7 +38,7 @@ func CheckIsAdminInJWT(tokenString string, signingKey string) (bool, error) {
 		return []byte(signingKey), nil
 	})
 
-	if err != nil {
+	if err != nil && token.Valid {
 		return false, fmt.Errorf("jwt.CheckIsAdminInJWT(): %w", err)
 	}
 

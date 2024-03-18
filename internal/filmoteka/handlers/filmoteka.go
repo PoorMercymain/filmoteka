@@ -188,23 +188,70 @@ func (h *actor) DeleteActor(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *actor) ReadActors(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	const logErrPrefix = "handlers.ReadActors():"
+
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+	if pageStr == "" {
+		pageStr = "1"
+	}
+
+	if limitStr == "" {
+		limitStr = "15"
+	}
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrPageInNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrLimitIsNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if page < 1 {
+		httperrorwriter.WriteError(w, appErrors.ErrPageNumberIsTooSmall, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if limit < 1 || limit > 100 {
+		httperrorwriter.WriteError(w, appErrors.ErrLimitParameterNotInCorrectRange, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	actors, err := h.srv.ReadActors(r.Context(), page, limit)
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	if len(actors) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	e := json.NewEncoder(w)
+	err = e.Encode(actors)
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+	}
+}
+
 type film struct {
 	srv domain.FilmService
 }
 
 func NewFilm(srv domain.FilmService) *film {
 	return &film{srv: srv}
-}
-
-func (h *film) Ping(w http.ResponseWriter, r *http.Request) {
-	err := h.srv.Ping(r.Context())
-	if err != nil {
-		logger.Logger().Errorln(zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *film) CreateFilm(w http.ResponseWriter, r *http.Request) {
@@ -569,64 +616,6 @@ func (h *film) FindFilms(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *actor) ReadActors(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	const logErrPrefix = "handlers.ReadActors():"
-
-	pageStr := r.URL.Query().Get("page")
-	limitStr := r.URL.Query().Get("limit")
-	if pageStr == "" {
-		pageStr = "1"
-	}
-
-	if limitStr == "" {
-		limitStr = "15"
-	}
-
-	page, err := strconv.Atoi(pageStr)
-	if err != nil {
-		httperrorwriter.WriteError(w, appErrors.ErrPageInNotANumber, http.StatusBadRequest, logErrPrefix)
-		return
-	}
-
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil {
-		httperrorwriter.WriteError(w, appErrors.ErrLimitIsNotANumber, http.StatusBadRequest, logErrPrefix)
-		return
-	}
-
-	if page < 1 {
-		httperrorwriter.WriteError(w, appErrors.ErrPageNumberIsTooSmall, http.StatusBadRequest, logErrPrefix)
-		return
-	}
-
-	if limit < 1 || limit > 100 {
-		httperrorwriter.WriteError(w, appErrors.ErrLimitParameterNotInCorrectRange, http.StatusBadRequest, logErrPrefix)
-		return
-	}
-
-	actors, err := h.srv.ReadActors(r.Context(), page, limit)
-	if err != nil {
-		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
-		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
-		return
-	}
-
-	if len(actors) == 0 {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	e := json.NewEncoder(w)
-	err = e.Encode(actors)
-	if err != nil {
-		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
-	}
-}
-
 type authorization struct {
 	srv    domain.AuthorizationService
 	JWTKey string
@@ -678,7 +667,7 @@ func (h *authorization) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenStr, err := jwt.CreateJWT(isAdmin, []byte(h.JWTKey))
+	tokenStr, err := jwt.CreateJWT(isAdmin, []byte(h.JWTKey), time.Now().Add(24*time.Hour))
 	if err != nil {
 		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
@@ -705,7 +694,7 @@ func (h *authorization) Register(w http.ResponseWriter, r *http.Request) {
 
 func (h *authorization) LogIn(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	const logErrPrefix = "handlers.Register():"
+	const logErrPrefix = "handlers.LogIn():"
 
 	err := jsonhttpvalidator.ValidateJSONRequest(w, r, logErrPrefix)
 	if err != nil {
@@ -751,7 +740,7 @@ func (h *authorization) LogIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.Logger().Infoln(isAdmin)
-	tokenStr, err := jwt.CreateJWT(isAdmin, []byte(h.JWTKey))
+	tokenStr, err := jwt.CreateJWT(isAdmin, []byte(h.JWTKey), time.Now().Add(24*time.Hour))
 	if err != nil {
 		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)

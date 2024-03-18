@@ -6,7 +6,6 @@ import (
 )
 
 type FilmService interface {
-	Ping(context.Context) error
 	CreateFilm(ctx context.Context, title string, description string, releaseDate time.Time, rating float32, actors []int) (int, error)
 	UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *float32, actors []int) error
 	DeleteFilm(ctx context.Context, id int) error
@@ -14,8 +13,8 @@ type FilmService interface {
 	FindFilms(ctx context.Context, filmTitleFragment string, actorNameFragment string, page int, limit int) ([]OutputFilm, error)
 }
 
+//go:generate mockgen -destination=mocks/film_repo_mock.gen.go -package=mocks . FilmRepository
 type FilmRepository interface {
-	Ping(context.Context) error
 	CreateFilm(ctx context.Context, title string, description string, releaseDate time.Time, rating float32, actors []int) (int, error)
 	UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *float32, actors []int) error
 	DeleteFilm(ctx context.Context, id int) error
@@ -30,6 +29,7 @@ type ActorService interface {
 	ReadActors(ctx context.Context, page int, limit int) ([]OutputActor, error)
 }
 
+//go:generate mockgen -destination=mocks/actor_repo_mock.gen.go -package=mocks . ActorRepository
 type ActorRepository interface {
 	CreateActor(ctx context.Context, name string, gender bool, birthday time.Time) (int, error)
 	UpdateActor(ctx context.Context, id int, name string, gender *bool, birthday time.Time) error
@@ -43,6 +43,7 @@ type AuthorizationService interface {
 	IsAdmin(ctx context.Context, login string) (bool, error)
 }
 
+//go:generate mockgen -destination=mocks/authorization_repo_mock.gen.go -package=mocks . AuthorizationRepository
 type AuthorizationRepository interface {
 	Register(ctx context.Context, login string, passwordHash string) error
 	GetPasswordHash(ctx context.Context, login string) (string, error)
