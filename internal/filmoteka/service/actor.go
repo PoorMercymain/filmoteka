@@ -46,3 +46,12 @@ func (s *actor) DeleteActor(ctx context.Context, id int) error {
 
 	return nil
 }
+
+func (s *actor) ReadActors(ctx context.Context, page int, limit int) ([]domain.OutputActor, error) {
+	actors, err := s.repo.ReadActors(ctx, page, limit)
+	if err != nil {
+		return nil, fmt.Errorf("service.ReadActors(): %w", err)
+	}
+
+	return actors, nil
+}

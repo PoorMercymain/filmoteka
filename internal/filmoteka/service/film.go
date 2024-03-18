@@ -64,3 +64,12 @@ func (s *film) ReadFilms(ctx context.Context, field string, order string, page i
 
 	return films, nil
 }
+
+func (s *film) FindFilms(ctx context.Context, filmTitleFragment string, actorNameFragment string, page int, limit int) ([]domain.OutputFilm, error) {
+	films, err := s.repo.FindFilms(ctx, filmTitleFragment, actorNameFragment, page, limit)
+	if err != nil {
+		return nil, fmt.Errorf("service.FindFilms(): %w", err)
+	}
+
+	return films, nil
+}

@@ -16,3 +16,11 @@ type OutputFilm struct {
 	Rating      float32 `json:"rating"`
 	ActorIDs    []int   `json:"actorIDs"`
 }
+
+type ActorOutputFilm struct {
+	ID          int     `json:"id"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	ReleaseDate string  `json:"releaseDate"`
+	Rating      float32 `json:"rating"`
+}

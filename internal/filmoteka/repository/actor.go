@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	appErrors "github.com/PoorMercymain/filmoteka/errors"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/domain"
@@ -101,4 +102,68 @@ func (r *actor) DeleteActor(ctx context.Context, id int) error {
 	}
 
 	return nil
+}
+
+func (r *actor) ReadActors(ctx context.Context, page int, limit int) ([]domain.OutputActor, error) {
+	var actors []domain.OutputActor
+	err := r.db.WithConnection(ctx, func(ctx context.Context, c *pgxpool.Conn) error {
+		rows, err := c.Query(ctx, "SELECT id, name, gender, birthday FROM actors LIMIT $1 OFFSET $2", limit, (page-1)*limit)
+		if err != nil {
+			return err
+		}
+
+		var (
+			curActor domain.OutputActor
+			curGender bool
+			curBirthday time.Time
+		)
+
+		for rows.Next() {
+			err = rows.Scan(&curActor.ID, &curActor.Name, &curGender, &curBirthday)
+			if err != nil {
+				return err
+			}
+
+			if curGender {
+				curActor.Gender = "female"
+			} else {
+				curActor.Gender = "male"
+			}
+
+			curActor.Birthday = curBirthday.Format(time.DateOnly)
+
+			filmRows, err := r.db.Query(ctx, "SELECT film_id FROM film_actor WHERE actor_id = $1", curActor.ID)
+			if err != nil {
+				return err
+			}
+
+			var (
+				films []domain.ActorOutputFilm
+				curFilm domain.ActorOutputFilm
+				curReleaseDate time.Time
+			)
+
+			for filmRows.Next() {
+				filmRows.Scan(&curFilm.ID)
+				err = r.db.QueryRow(ctx, "SELECT title, description, release_date, rating FROM films WHERE id = $1", curFilm.ID).Scan(&curFilm.Title, &curFilm.Description, &curReleaseDate, &curFilm.Rating)
+				if err != nil {
+					return err
+				}
+
+				curFilm.ReleaseDate = curReleaseDate.Format(time.DateOnly)
+				films = append(films, curFilm)
+			}
+
+			curActor.Films = films
+			actors = append(actors, curActor)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("repository.ReadActors(): %w", err)
+	}
+
+	return actors, nil
 }

@@ -10,3 +10,11 @@ type Actor struct {
 	Gender   string `json:"gender,omitempty"`
 	Birthday string `json:"birthday,omitempty"`
 }
+
+type OutputActor struct {
+	ID int `json:"id"`
+	Name string `json:"name"`
+	Gender string `json:"gender"`
+	Birthday string `json:"birthday"`
+	Films []ActorOutputFilm `json:"films"`
+}

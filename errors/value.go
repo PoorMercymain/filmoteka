@@ -19,4 +19,5 @@ var (
 	ErrLimitIsNotANumber               = errors.New("limit parameter is not a number")
 	ErrPageNumberIsTooSmall            = errors.New("page parameter is too small, 1 or higher required")
 	ErrLimitParameterNotInCorrectRange = errors.New("limit parameter is not in range [1, 100]")
+	ErrNoFragmentsProvided = errors.New("no fragments for search provided in request")
 )

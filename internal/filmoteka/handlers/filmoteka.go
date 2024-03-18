@@ -502,3 +502,126 @@ func (h *film) ReadFilms(w http.ResponseWriter, r *http.Request) {
 		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 	}
 }
+
+func (h *film) FindFilms(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	const logErrPrefix = "handlers.FindFilms():"
+
+	filmTitleFragment := r.URL.Query().Get("title")
+	actorNameFragment := r.URL.Query().Get("name")
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+	if pageStr == "" {
+		pageStr = "1"
+	}
+
+	if limitStr == "" {
+		limitStr = "1"
+	}
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrPageInNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrLimitIsNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if page < 1 {
+		httperrorwriter.WriteError(w, appErrors.ErrPageNumberIsTooSmall, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if limit < 1 || limit > 100 {
+		httperrorwriter.WriteError(w, appErrors.ErrLimitParameterNotInCorrectRange, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if filmTitleFragment == "" && actorNameFragment == "" {
+		httperrorwriter.WriteError(w, appErrors.ErrNoFragmentsProvided, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	films, err := h.srv.FindFilms(r.Context(), filmTitleFragment, actorNameFragment, page, limit)
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	if len(films) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	e := json.NewEncoder(w)
+	err = e.Encode(films)
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+	}
+}
+
+func (h *actor) ReadActors(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	const logErrPrefix = "handlers.ReadActors():"
+
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+	if pageStr == "" {
+		pageStr = "1"
+	}
+
+	if limitStr == "" {
+		limitStr = "15"
+	}
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrPageInNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrLimitIsNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if page < 1 {
+		httperrorwriter.WriteError(w, appErrors.ErrPageNumberIsTooSmall, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if limit < 1 || limit > 100 {
+		httperrorwriter.WriteError(w, appErrors.ErrLimitParameterNotInCorrectRange, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	actors, err := h.srv.ReadActors(r.Context(), page, limit)
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	if len(actors) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	e := json.NewEncoder(w)
+	err = e.Encode(actors)
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+	}
+}

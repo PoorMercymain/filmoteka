@@ -249,3 +249,76 @@ func (r *film) ReadFilms(ctx context.Context, field string, order string, page i
 
 	return films, nil
 }
+
+func (r *film) FindFilms(ctx context.Context, filmTitleFragment string, actorNameFragment string, page int, limit int) ([]domain.OutputFilm, error) {
+	var films []domain.OutputFilm
+	err := r.db.WithConnection(ctx, func(ctx context.Context, c *pgxpool.Conn) error {
+		sqlStr := "SELECT DISTINCT films.id, films.title, films.description, films.release_date, films.rating FROM films "
+		pagination := " LIMIT "
+
+		var rows pgx.Rows
+		var err error
+		if filmTitleFragment != "" && actorNameFragment != "" {
+			sqlStr += "JOIN film_actor ON films.id = film_actor.film_id JOIN actors ON actors.id = film_actor.actor_id WHERE films.title ILIKE '%' || $1 || '%' AND actors.name ILIKE '%' || $2 || '%'"
+			pagination += "$3 OFFSET $4"
+			rows, err = c.Query(ctx, sqlStr+pagination, filmTitleFragment, actorNameFragment, limit, (page-1)*limit)
+		} else if actorNameFragment != "" {
+			sqlStr += "JOIN film_actor ON films.id = film_actor.film_id JOIN actors ON actors.id = film_actor.actor_id WHERE actors.name ILIKE '%' || $1 || '%'"
+			pagination += "$2 OFFSET $3"
+			rows, err = c.Query(ctx, sqlStr+pagination, actorNameFragment, limit, (page-1)*limit)
+		} else {
+			sqlStr += "WHERE title ILIKE '%' || $1 || '%'"
+			pagination += "$2 OFFSET $3"
+			rows, err = c.Query(ctx, sqlStr+pagination, filmTitleFragment, limit, (page-1)*limit)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		var curFilm domain.OutputFilm
+		var curReleaseDate time.Time
+		for rows.Next() {
+			err = rows.Scan(&curFilm.ID, &curFilm.Title, &curFilm.Description, &curReleaseDate, &curFilm.Rating)
+			if err != nil {
+				return err
+			}
+
+			curFilm.ReleaseDate = curReleaseDate.Format(time.DateOnly)
+
+			conn, err := r.db.Acquire(ctx)
+			if err != nil {
+				return err
+			}
+
+			actorRows, err := conn.Query(ctx, "SELECT actor_id FROM film_actor WHERE film_id = $1 ORDER BY actor_id ASC", curFilm.ID)
+			if err != nil {
+				conn.Release()
+				return err
+			}
+
+			var actorID int
+			curFilm.ActorIDs = nil
+			for actorRows.Next() {
+				err = actorRows.Scan(&actorID)
+				if err != nil {
+					conn.Release()
+					return err
+				}
+
+				curFilm.ActorIDs = append(curFilm.ActorIDs, actorID)
+			}
+
+			films = append(films, curFilm)
+			conn.Release()
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("repository.FindFilms(): %w", err)
+	}
+
+	return films, nil
+}
