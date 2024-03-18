@@ -14,7 +14,7 @@ type OutputFilm struct {
 	Description string            `json:"description"`
 	ReleaseDate string            `json:"releaseDate"`
 	Rating      float32           `json:"rating"`
-	Actors      []FilmOutputActor `json:"actorIDs"`
+	Actors      []FilmOutputActor `json:"actors"`
 }
 
 type ActorOutputFilm struct {
