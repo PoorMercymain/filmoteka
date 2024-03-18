@@ -16,7 +16,6 @@ import (
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/domain"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/domain/mocks"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/service"
-	"github.com/PoorMercymain/filmoteka/pkg/logger"
 )
 
 func testRouter(t *testing.T) *http.ServeMux {
@@ -936,6 +935,13 @@ func TestRegister(t *testing.T) {
 			"/register",
 			http.MethodPost,
 			"application/json",
+			http.StatusInternalServerError,
+			"{\"login\":\"abc\",\"password\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+		},
+		{
+			"/register",
+			http.MethodPost,
+			"application/json",
 			http.StatusBadRequest,
 			"{\"login\":\"abc\",\"password\":\"abc\"",
 		},
@@ -1066,8 +1072,7 @@ func TestLogIn(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testTable {
-		logger.Logger().Infoln(i)
+	for _, testCase := range testTable {
 		resp := request(t, ts, testCase.code, testCase.method, testCase.content, testCase.body, testCase.endpoint)
 		resp.Body.Close()
 	}

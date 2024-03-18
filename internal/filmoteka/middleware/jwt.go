@@ -1,16 +1,12 @@
 package middleware
 
 import (
-	"errors"
 	"net/http"
 	"strings"
-
-	"go.uber.org/zap"
 
 	appErrors "github.com/PoorMercymain/filmoteka/errors"
 	httperrorwriter "github.com/PoorMercymain/filmoteka/pkg/http-error-writer"
 	"github.com/PoorMercymain/filmoteka/pkg/jwt"
-	"github.com/PoorMercymain/filmoteka/pkg/logger"
 )
 
 func AdminRequired(next http.Handler, jwtKey string) http.Handler {
@@ -30,13 +26,7 @@ func AdminRequired(next http.Handler, jwtKey string) http.Handler {
 
 		isAdmin, err := jwt.CheckIsAdminInJWT(authToken, jwtKey)
 		if err != nil {
-			if errors.Is(err, appErrors.ErrTokenIsInvalid) {
-				httperrorwriter.WriteError(w, appErrors.ErrTokenIsInvalid, http.StatusUnauthorized, logErrPrefix)
-				return
-			}
-
-			logger.Logger().Errorln(logErrPrefix, zap.Error(err))
-			httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+			httperrorwriter.WriteError(w, appErrors.ErrTokenIsInvalid, http.StatusUnauthorized, logErrPrefix)
 			return
 		}
 
@@ -66,13 +56,7 @@ func AuthorizationRequired(next http.Handler, jwtKey string) http.Handler {
 
 		_, err := jwt.CheckIsAdminInJWT(authToken, jwtKey)
 		if err != nil {
-			if errors.Is(err, appErrors.ErrTokenIsInvalid) {
-				httperrorwriter.WriteError(w, appErrors.ErrTokenIsInvalid, http.StatusUnauthorized, logErrPrefix)
-				return
-			}
-
-			logger.Logger().Errorln(logErrPrefix, zap.Error(err))
-			httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+			httperrorwriter.WriteError(w, appErrors.ErrTokenIsInvalid, http.StatusUnauthorized, logErrPrefix)
 			return
 		}
 

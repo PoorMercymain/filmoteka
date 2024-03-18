@@ -33,12 +33,16 @@ func testRouter(t *testing.T) *http.ServeMux {
 	return mux
 }
 
-func request(t *testing.T, ts *httptest.Server, code int, method, content, body, endpoint, authorization string) *http.Response {
+func request(t *testing.T, ts *httptest.Server, code int, method, content, body, endpoint, authorization, cookie string) *http.Response {
 	req, err := http.NewRequest(method, ts.URL+endpoint, strings.NewReader(body))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", content)
 	if authorization != "" {
 		req.Header.Set("Authorization", authorization)
+	}
+
+	if cookie != "" {
+		req.AddCookie(&http.Cookie{Name: "authToken", Value: cookie})
 	}
 
 	resp, err := ts.Client().Do(req)
@@ -74,12 +78,14 @@ func TestAdminRequired(t *testing.T) {
 		code          int
 		body          string
 		authorization string
+		cookie string
 	}{
 		{
 			"/admin",
 			http.MethodGet,
 			"",
 			http.StatusUnauthorized,
+			"",
 			"",
 			"",
 		},
@@ -90,6 +96,7 @@ func TestAdminRequired(t *testing.T) {
 			http.StatusForbidden,
 			"",
 			tokenStrNoAdmin,
+			"",
 		},
 		{
 			"/admin",
@@ -98,6 +105,7 @@ func TestAdminRequired(t *testing.T) {
 			http.StatusUnauthorized,
 			"",
 			wrongToken,
+			"",
 		},
 		{
 			"/admin",
@@ -106,11 +114,21 @@ func TestAdminRequired(t *testing.T) {
 			http.StatusOK,
 			"",
 			tokenStrAdmin,
+			"",
+		},
+		{
+			"/admin",
+			http.MethodGet,
+			"",
+			http.StatusOK,
+			"",
+			"",
+			tokenStrAdmin,
 		},
 	}
 
 	for _, testCase := range testTable {
-		resp := request(t, ts, testCase.code, testCase.method, testCase.content, testCase.body, testCase.endpoint, testCase.authorization)
+		resp := request(t, ts, testCase.code, testCase.method, testCase.content, testCase.body, testCase.endpoint, testCase.authorization, testCase.cookie)
 		resp.Body.Close()
 	}
 }
@@ -136,12 +154,14 @@ func TestAuthorizationRequired(t *testing.T) {
 		code          int
 		body          string
 		authorization string
+		cookie string
 	}{
 		{
 			"/user",
 			http.MethodGet,
 			"",
 			http.StatusUnauthorized,
+			"",
 			"",
 			"",
 		},
@@ -152,6 +172,7 @@ func TestAuthorizationRequired(t *testing.T) {
 			http.StatusUnauthorized,
 			"",
 			wrongToken,
+			"",
 		},
 		{
 			"/user",
@@ -160,6 +181,7 @@ func TestAuthorizationRequired(t *testing.T) {
 			http.StatusOK,
 			"",
 			tokenStrNoAdmin,
+			"",
 		},
 		{
 			"/user",
@@ -168,11 +190,21 @@ func TestAuthorizationRequired(t *testing.T) {
 			http.StatusOK,
 			"",
 			tokenStrAdmin,
+			"",
+		},
+		{
+			"/user",
+			http.MethodGet,
+			"",
+			http.StatusOK,
+			"",
+			"",
+			tokenStrAdmin,
 		},
 	}
 
 	for _, testCase := range testTable {
-		resp := request(t, ts, testCase.code, testCase.method, testCase.content, testCase.body, testCase.endpoint, testCase.authorization)
+		resp := request(t, ts, testCase.code, testCase.method, testCase.content, testCase.body, testCase.endpoint, testCase.authorization, testCase.cookie)
 		resp.Body.Close()
 	}
 }
