@@ -25,7 +25,7 @@ import (
 func main() {
 	cfg := config.Config{}
 	if err := env.Parse(&cfg); err != nil {
-		logger.Logger().Fatalln("Failed to parse env: %v", err) // default logfile will be used
+		logger.Logger().Fatalln("Failed to parse env: %v", err) // default logfile will be used for this error
 	}
 
 	logger.SetLogFile(cfg.LogFilePath)
@@ -56,7 +56,6 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("GET /ping", middleware.Log(middleware.AuthorizationRequired(http.HandlerFunc(fh.Ping), auh.JWTKey)))
 	mux.Handle("POST /actor", middleware.Log(middleware.AdminRequired(http.HandlerFunc(ah.CreateActor), auh.JWTKey)))
 	mux.Handle("PUT /actor/{id}", middleware.Log(middleware.AdminRequired(http.HandlerFunc(ah.UpdateActor), auh.JWTKey)))
 	mux.Handle("DELETE /actor/{id}", middleware.Log(middleware.AdminRequired(http.HandlerFunc(ah.DeleteActor), auh.JWTKey)))

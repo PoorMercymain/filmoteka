@@ -27,15 +27,6 @@ func NewFilm(pg *postgres) *film {
 	return &film{db: pg}
 }
 
-func (r *film) Ping(ctx context.Context) error {
-	err := r.db.Ping(ctx)
-	if err != nil {
-		return fmt.Errorf("repository.Ping(): %w", err)
-	}
-
-	return nil
-}
-
 func (r *film) CreateFilm(ctx context.Context, title string, description string, releaseDate time.Time, rating float32, actors []int) (int, error) {
 	var id int
 	err := r.db.WithTransaction(ctx, func(ctx context.Context, tx pgx.Tx) error {
