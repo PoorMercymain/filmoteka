@@ -692,6 +692,15 @@ func (h *authorization) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &cookie)
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	e := json.NewEncoder(w)
+	err = e.Encode(domain.Token{Token: tokenStr})
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+	}
 }
 
 func (h *authorization) LogIn(w http.ResponseWriter, r *http.Request) {
@@ -756,4 +765,13 @@ func (h *authorization) LogIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &cookie)
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	e := json.NewEncoder(w)
+	err = e.Encode(domain.Token{Token: tokenStr})
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+	}
 }

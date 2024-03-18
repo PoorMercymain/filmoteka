@@ -22,6 +22,6 @@ var (
 	ErrNoFragmentsProvided             = errors.New("no fragments for search provided in request")
 	ErrTokenIsInvalid                  = errors.New("invalid token provided")
 	ErrWrongPassword                   = errors.New("wrong password provided")
-	ErrNoCookieProvided                = errors.New("no auth cookie provided")
+	ErrNoTokenProvided                 = errors.New("no auth token provided (Cookie and Authorization Bearer supported)")
 	ErrAdminRequired                   = errors.New("admin role needed to get access to the endpoint")
 )

@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -16,13 +17,18 @@ func AdminRequired(next http.Handler, jwtKey string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		const logErrPrefix = "middleware.AdminRequired():"
 
-		cookie, err := r.Cookie("authToken")
-		if err != nil {
-			httperrorwriter.WriteError(w, appErrors.ErrNoCookieProvided, http.StatusUnauthorized, logErrPrefix)
-			return
+		authToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		if authToken == "" {
+			cookie, err := r.Cookie("authToken")
+			if err != nil {
+				httperrorwriter.WriteError(w, appErrors.ErrNoTokenProvided, http.StatusUnauthorized, logErrPrefix)
+				return
+			}
+
+			authToken = cookie.Value
 		}
 
-		isAdmin, err := jwt.CheckIsAdminInJWT(cookie.Value, jwtKey)
+		isAdmin, err := jwt.CheckIsAdminInJWT(authToken, jwtKey)
 		if err != nil {
 			if errors.Is(err, appErrors.ErrTokenIsInvalid) {
 				httperrorwriter.WriteError(w, appErrors.ErrTokenIsInvalid, http.StatusUnauthorized, logErrPrefix)
@@ -47,13 +53,18 @@ func AuthorizationRequired(next http.Handler, jwtKey string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		const logErrPrefix = "middleware.AuthorizationRequired():"
 
-		cookie, err := r.Cookie("authToken")
-		if err != nil {
-			httperrorwriter.WriteError(w, appErrors.ErrNoCookieProvided, http.StatusUnauthorized, logErrPrefix)
-			return
+		authToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		if authToken == "" {
+			cookie, err := r.Cookie("authToken")
+			if err != nil {
+				httperrorwriter.WriteError(w, appErrors.ErrNoTokenProvided, http.StatusUnauthorized, logErrPrefix)
+				return
+			}
+
+			authToken = cookie.Value
 		}
 
-		_, err = jwt.CheckIsAdminInJWT(cookie.Value, jwtKey)
+		_, err := jwt.CheckIsAdminInJWT(authToken, jwtKey)
 		if err != nil {
 			if errors.Is(err, appErrors.ErrTokenIsInvalid) {
 				httperrorwriter.WriteError(w, appErrors.ErrTokenIsInvalid, http.StatusUnauthorized, logErrPrefix)
