@@ -15,8 +15,10 @@ definitions:
   domain.AuthorizationData:
     properties:
       login:
+        example: login
         type: string
       password:
+        example: password
         type: string
     type: object
   domain.Film:
@@ -79,8 +81,6 @@ paths:
       - Actors
   /actor/{id}:
     delete:
-      consumes:
-      - application/json
       description: Запрос для удаления информации об актере из БД
       parameters:
       - description: id актера
@@ -205,12 +205,6 @@ paths:
     delete:
       description: Запрос для удаления информации о фильме из БД
       parameters:
-      - description: информация о фильме
-        in: body
-        name: input
-        required: true
-        schema:
-          $ref: '#/definitions/domain.Film'
       - description: id фильма
         example: 1
         in: path

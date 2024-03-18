@@ -9,9 +9,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	gomock "github.com/golang/mock/gomock"
-
 	domain "github.com/PoorMercymain/filmoteka/internal/filmoteka/domain"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockFilmRepository is a mock of FilmRepository interface.
