@@ -184,7 +184,6 @@ func (h *actor) UpdateActor(w http.ResponseWriter, r *http.Request) {
 // @Tags Actors
 // @Summary Запрос удаления актера из БД
 // @Description Запрос для удаления информации об актере из БД
-// @Accept json
 // @Param id path int true "id актера" Example(1)
 // @Success 204
 // @Failure 400
@@ -518,7 +517,6 @@ func (h *film) UpdateFilm(w http.ResponseWriter, r *http.Request) {
 // @Tags Films
 // @Summary Запрос удаления фильма из БД
 // @Description Запрос для удаления информации о фильме из БД
-// @Param input body domain.Film true "информация о фильме"
 // @Param id path int true "id фильма" Example(1)
 // @Success 204
 // @Failure 400

@@ -30,12 +30,14 @@ func TestLog(t *testing.T) {
 		code          int
 		body          string
 		authorization string
+		cookie string
 	}{
 		{
 			"/logs",
 			http.MethodGet,
 			"",
 			http.StatusOK,
+			"",
 			"",
 			"",
 		},
@@ -46,11 +48,12 @@ func TestLog(t *testing.T) {
 			http.StatusOK,
 			"",
 			"",
+			"",
 		},
 	}
 
 	for _, testCase := range testTable {
-		resp := request(t, ts, testCase.code, testCase.method, testCase.content, testCase.body, testCase.endpoint, testCase.authorization)
+		resp := request(t, ts, testCase.code, testCase.method, testCase.content, testCase.body, testCase.endpoint, testCase.authorization, testCase.cookie)
 		resp.Body.Close()
 	}
 }

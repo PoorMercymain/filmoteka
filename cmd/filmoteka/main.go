@@ -13,7 +13,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/caarlos0/env/v6"
+	"github.com/golang-migrate/migrate/v4"
 
+	_ "github.com/PoorMercymain/filmoteka/docs"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/config"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/handlers"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/middleware"
@@ -21,7 +23,6 @@ import (
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/service"
 	"github.com/PoorMercymain/filmoteka/pkg/logger"
 	"github.com/swaggo/http-swagger"
-	_ "github.com/PoorMercymain/filmoteka/docs"
 )
 
 // @title Filmoteka API
@@ -50,7 +51,12 @@ func main() {
 
 	logger.SetLogFile(cfg.LogFilePath)
 
-	err := repository.ApplyMigrations(cfg.MigrationsPath, cfg.DSN())
+	m, err := migrate.New("file://"+cfg.MigrationsPath, cfg.DSN())
+	if err != nil {
+		logger.Logger().Fatalln(zap.Error(err))
+	}
+
+	err = repository.ApplyMigrations(m)
 	if err != nil {
 		logger.Logger().Fatalln(zap.Error(err))
 	}

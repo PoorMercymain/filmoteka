@@ -110,9 +110,6 @@ const docTemplate = `{
             },
             "delete": {
                 "description": "Запрос для удаления информации об актере из БД",
-                "consumes": [
-                    "application/json"
-                ],
                 "tags": [
                     "Actors"
                 ],
@@ -297,15 +294,6 @@ const docTemplate = `{
                 ],
                 "summary": "Запрос удаления фильма из БД",
                 "parameters": [
-                    {
-                        "description": "информация о фильме",
-                        "name": "input",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.Film"
-                        }
-                    },
                     {
                         "type": "integer",
                         "example": 1,
@@ -558,10 +546,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "login": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "login"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "password"
                 }
             }
         },

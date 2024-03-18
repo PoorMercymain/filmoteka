@@ -38,11 +38,7 @@ func CheckIsAdminInJWT(tokenString string, signingKey string) (bool, error) {
 		return []byte(signingKey), nil
 	})
 
-	if err != nil && token.Valid {
-		return false, fmt.Errorf("jwt.CheckIsAdminInJWT(): %w", err)
-	}
-
-	if !token.Valid {
+	if err != nil || !token.Valid {
 		return false, fmt.Errorf("jwt.CheckIsAdminInJWT(): %w", appErrors.ErrTokenIsInvalid)
 	}
 
