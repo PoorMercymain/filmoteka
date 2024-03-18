@@ -7,16 +7,18 @@ import (
 
 type FilmService interface {
 	Ping(context.Context) error
-	CreateFilm(ctx context.Context, title string, description string, releaseDate time.Time, rating int, actors []int) (int, error)
-	UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *int, actors []int) error
+	CreateFilm(ctx context.Context, title string, description string, releaseDate time.Time, rating float32, actors []int) (int, error)
+	UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *float32, actors []int) error
 	DeleteFilm(ctx context.Context, id int) error
+	ReadFilms(ctx context.Context, field string, order string, page int, limit int) ([]OutputFilm, error)
 }
 
 type FilmRepository interface {
 	Ping(context.Context) error
-	CreateFilm(ctx context.Context, title string, description string, releaseDate time.Time, rating int, actors []int) (int, error)
-	UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *int, actors []int) error
+	CreateFilm(ctx context.Context, title string, description string, releaseDate time.Time, rating float32, actors []int) (int, error)
+	UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *float32, actors []int) error
 	DeleteFilm(ctx context.Context, id int) error
+	ReadFilms(ctx context.Context, field string, order string, page int, limit int) ([]OutputFilm, error)
 }
 
 type ActorService interface {

@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS films (
     title TEXT NOT NULL,
     description TEXT,
     release_date TIMESTAMPTZ,
-    rating INT
+    rating REAL
 );
 
 CREATE TABLE IF NOT EXISTS film_actor (

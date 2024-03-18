@@ -60,6 +60,7 @@ func main() {
 	mux.Handle("POST /film", middleware.Log(http.HandlerFunc(fh.CreateFilm)))
 	mux.Handle("PUT /film/{id}", middleware.Log(http.HandlerFunc(fh.UpdateFilm)))
 	mux.Handle("DELETE /film/{id}", middleware.Log(http.HandlerFunc(fh.DeleteFilm)))
+	mux.Handle("GET /films", middleware.Log(http.HandlerFunc(fh.ReadFilms)))
 
 	server := &http.Server{
 		Addr:     cfg.ServiceHost + ":" + strconv.Itoa(cfg.ServicePort),

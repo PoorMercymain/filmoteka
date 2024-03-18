@@ -65,6 +65,7 @@ func (h *actor) CreateActor(w http.ResponseWriter, r *http.Request) {
 
 	id, err := h.srv.CreateActor(r.Context(), actor.Name, gender, birthday)
 	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
 		return
 	}
@@ -146,6 +147,7 @@ func (h *actor) UpdateActor(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
 		return
 	}
@@ -177,6 +179,7 @@ func (h *actor) DeleteActor(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
 		return
 	}
@@ -280,6 +283,7 @@ func (h *film) CreateFilm(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
 		return
 	}
@@ -380,6 +384,7 @@ func (h *film) UpdateFilm(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
 		return
 	}
@@ -411,9 +416,89 @@ func (h *film) DeleteFilm(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
 		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *film) ReadFilms(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	const logErrPrefix = "handlers.ReadFilms():"
+
+	field := r.URL.Query().Get("field")
+	order := r.URL.Query().Get("order")
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	if field == "" {
+		field = "rating"
+	}
+
+	if order == "" {
+		order = "desc"
+	}
+
+	if pageStr == "" {
+		pageStr = "1"
+	}
+
+	if limitStr == "" {
+		limitStr = "15"
+	}
+
+	if field != "title" && field != "rating" && field != "release_date" {
+		httperrorwriter.WriteError(w, appErrors.ErrUnknownSortField, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if order != "desc" && order != "asc" {
+		httperrorwriter.WriteError(w, appErrors.ErrUnknownOrder, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrPageInNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		httperrorwriter.WriteError(w, appErrors.ErrLimitIsNotANumber, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if page < 1 {
+		httperrorwriter.WriteError(w, appErrors.ErrPageNumberIsTooSmall, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	if limit < 1 || limit > 100 {
+		httperrorwriter.WriteError(w, appErrors.ErrLimitParameterNotInCorrectRange, http.StatusBadRequest, logErrPrefix)
+		return
+	}
+
+	films, err := h.srv.ReadFilms(r.Context(), field, order, page, limit)
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+		httperrorwriter.WriteError(w, appErrors.ErrSomethingWentWrong, http.StatusInternalServerError, logErrPrefix)
+		return
+	}
+
+	if len(films) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	e := json.NewEncoder(w)
+	err = e.Encode(films)
+	if err != nil {
+		logger.Logger().Errorln(logErrPrefix, zap.Error(err))
+	}
 }

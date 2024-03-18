@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	appErrors "github.com/PoorMercymain/filmoteka/errors"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/domain"
@@ -35,7 +36,7 @@ func (r *film) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (r *film) CreateFilm(ctx context.Context, title string, description string, releaseDate time.Time, rating int, actors []int) (int, error) {
+func (r *film) CreateFilm(ctx context.Context, title string, description string, releaseDate time.Time, rating float32, actors []int) (int, error) {
 	var id int
 	err := r.db.WithTransaction(ctx, func(ctx context.Context, tx pgx.Tx) error {
 		err := tx.QueryRow(ctx, "INSERT INTO films(title, description, release_date, rating) VALUES($1, $2, $3, $4) RETURNING id", title, description, releaseDate, rating).Scan(&id)
@@ -75,12 +76,12 @@ func (r *film) CreateFilm(ctx context.Context, title string, description string,
 	return id, nil
 }
 
-func (r *film) UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *int, actors []int) error {
+func (r *film) UpdateFilm(ctx context.Context, id int, title string, description string, releaseDate time.Time, rating *float32, actors []int) error {
 	var (
 		titleInDB       string
 		descriptionInDB string
 		releaseDateInDB time.Time
-		ratingInDB      int
+		ratingInDB      float32
 		actorsInDB      []int
 	)
 
@@ -191,4 +192,60 @@ func (r *film) DeleteFilm(ctx context.Context, id int) error {
 	}
 
 	return nil
+}
+
+func (r *film) ReadFilms(ctx context.Context, field string, order string, page int, limit int) ([]domain.OutputFilm, error) {
+	var films []domain.OutputFilm
+	err := r.db.WithConnection(ctx, func(ctx context.Context, c *pgxpool.Conn) error {
+		sqlStr := fmt.Sprintf("SELECT id, title, description, release_date, rating FROM films ORDER BY %s %s", field, order)
+		rows, err := c.Query(ctx, sqlStr+" LIMIT $1 OFFSET $2", limit, (page-1)*limit)
+		if err != nil {
+			return err
+		}
+
+		var curFilm domain.OutputFilm
+		var curReleaseDate time.Time
+		for rows.Next() {
+			err = rows.Scan(&curFilm.ID, &curFilm.Title, &curFilm.Description, &curReleaseDate, &curFilm.Rating)
+			if err != nil {
+				return err
+			}
+
+			curFilm.ReleaseDate = curReleaseDate.Format(time.DateOnly)
+
+			conn, err := r.db.Acquire(ctx)
+			if err != nil {
+				return err
+			}
+
+			actorRows, err := conn.Query(ctx, "SELECT actor_id FROM film_actor WHERE film_id = $1 ORDER BY actor_id ASC", curFilm.ID)
+			if err != nil {
+				conn.Release()
+				return err
+			}
+
+			var actorID int
+			curFilm.ActorIDs = nil
+			for actorRows.Next() {
+				err = actorRows.Scan(&actorID)
+				if err != nil {
+					conn.Release()
+					return err
+				}
+
+				curFilm.ActorIDs = append(curFilm.ActorIDs, actorID)
+			}
+
+			films = append(films, curFilm)
+			conn.Release()
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("repository.ReadFilms(): %w", err)
+	}
+
+	return films, nil
 }
