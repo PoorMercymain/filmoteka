@@ -740,7 +740,7 @@ func NewAuthorization(srv domain.AuthorizationService, jwtKey string) *authoriza
 
 // @Tags Auth
 // @Summary Запрос регистрации в filmoteka
-// @Description Запрос для регистрации в сервисе, производится регистрация обычного пользователя (если нужен админ, надо задать соответствующее поле в БД в таблице auth) и выдается JWT (можно указать в заголовке Authorization) на 24 часа (также записывается в Cookie)
+// @Description Запрос для регистрации в сервисе, производится регистрация обычного пользователя (если нужен админ, надо задать соответствующее поле в БД в таблице auth и заново получить токен через login) и выдается JWT (можно указать в заголовке Authorization) на 24 часа (также записывается в Cookie)
 // @Accept json
 // @Produce json
 // @Param input body domain.AuthorizationData true "аутентификационные данные"
