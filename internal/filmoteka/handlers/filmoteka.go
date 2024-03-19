@@ -411,7 +411,7 @@ func (h *film) CreateFilm(w http.ResponseWriter, r *http.Request) {
 // @Summary Запрос обновления информации о фильме
 // @Description Запрос для обновления информации о фильме, как полного, так и частичного
 // @Accept json
-// @Param input body domain.Film true "информация о фильме"
+// @Param input body domain.Film true "информация о фильме, если не убрать из запроса поле actorIDs, его значение заменит актеров фильма в БД"
 // @Param id path int true "id фильма" Example(1)
 // @Success 204
 // @Failure 400
