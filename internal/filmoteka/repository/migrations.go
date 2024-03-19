@@ -8,8 +8,8 @@ import (
 
 //go:generate mockgen -destination=mocks/migrator_mock.gen.go -package=mocks . Migrator
 type Migrator interface {
-    Up() error
-    Close() (sourceErr, databaseErr error)
+	Up() error
+	Close() (sourceErr, databaseErr error)
 }
 
 func ApplyMigrations(m Migrator) error {

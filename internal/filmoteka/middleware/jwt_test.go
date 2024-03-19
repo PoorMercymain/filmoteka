@@ -78,7 +78,7 @@ func TestAdminRequired(t *testing.T) {
 		code          int
 		body          string
 		authorization string
-		cookie string
+		cookie        string
 	}{
 		{
 			"/admin",
@@ -154,7 +154,7 @@ func TestAuthorizationRequired(t *testing.T) {
 		code          int
 		body          string
 		authorization string
-		cookie string
+		cookie        string
 	}{
 		{
 			"/user",

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func testLogRouter(t *testing.T) *http.ServeMux {
@@ -12,7 +14,8 @@ func testLogRouter(t *testing.T) *http.ServeMux {
 	mux.Handle("GET /logs", Log(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})))
 	mux.Handle("GET /logs-with-write", Log(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("abc"))
+		_, err := w.Write([]byte("abc"))
+		require.NoError(t, err)
 	})))
 
 	return mux
@@ -30,7 +33,7 @@ func TestLog(t *testing.T) {
 		code          int
 		body          string
 		authorization string
-		cookie string
+		cookie        string
 	}{
 		{
 			"/logs",
