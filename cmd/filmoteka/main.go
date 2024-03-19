@@ -22,7 +22,7 @@ import (
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/repository"
 	"github.com/PoorMercymain/filmoteka/internal/filmoteka/service"
 	"github.com/PoorMercymain/filmoteka/pkg/logger"
-	"github.com/swaggo/http-swagger"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // @title Filmoteka API
