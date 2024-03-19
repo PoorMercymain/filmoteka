@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func testLogRouter(t *testing.T) *http.ServeMux {
+func testLogRouter() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /logs", Log(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})))
@@ -19,7 +19,7 @@ func testLogRouter(t *testing.T) *http.ServeMux {
 }
 
 func TestLog(t *testing.T) {
-	ts := httptest.NewServer(testLogRouter(t))
+	ts := httptest.NewServer(testLogRouter())
 
 	defer ts.Close()
 
